@@ -19,7 +19,8 @@ export const App: React.FC = () => {
     syncScrollEnabled,
     currentUser,
     setCurrentUser,
-    setCloudData,
+    setCloudNotes,
+    setCloudFolders,
     toggleSidebar,
     setViewMode,
     createMultipleNotes,
@@ -50,17 +51,15 @@ export const App: React.FC = () => {
     const unsubFirestore = subscribeToUserData(
       currentUser.uid,
       (cloudNotes) => {
-        // Merge cloud notes into store
-        setCloudData(cloudNotes, []);
+        setCloudNotes(cloudNotes);
       },
       (cloudFolders) => {
-        // Merge cloud folders into store
-        setCloudData([], cloudFolders);
+        setCloudFolders(cloudFolders);
       }
     );
 
     return () => unsubFirestore();
-  }, [currentUser, setCloudData]);
+  }, [currentUser, setCloudNotes, setCloudFolders]);
 
   // Synchronized scrolling handlers
   const handleEditorScroll = useCallback(

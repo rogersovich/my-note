@@ -149,6 +149,8 @@ interface NoteState {
 
   // Mass Cloud Sync
   setCloudData: (notes: Note[], folders: Folder[]) => void;
+  setCloudNotes: (notes: Note[]) => void;
+  setCloudFolders: (folders: Folder[]) => void;
   initSyncListeners: () => void;
 }
 
@@ -767,32 +769,79 @@ export const useNoteStore = create<NoteState>((set, get) => {
       });
     },
 
-    setCloudData: (cloudNotes, cloudFolders) => {
-      // Merge cloud data with state
+    setCloudNotes: (cloudNotes) => {
       set((state) => {
-        const existingNotesMap = new Map(state.notes.map(n => [n.id, n]));
-        
-        cloudNotes.forEach(cn => {
-          const local = existingNotesMap.get(cn.id);
-          // If cloud note is newer or doesn't exist locally
+        const cloudIds = new Set(cloudNotes.map((cn) => cn.id));
+        const currentUserId = state.currentUser?.uid;
+
+        // Keep local notes that don't belong to current cloud user (e.g. unowned drafts)
+        // If a note belonged to this user but is not in cloudNotes, it was deleted on another machine!
+        const retainedNotes = state.notes.filter((n) => {
+          if (n.userId && n.userId === currentUserId) {
+            return cloudIds.has(n.id);
+          }
+          return true;
+        });
+
+        const noteMap = new Map(retainedNotes.map((n) => [n.id, n]));
+        cloudNotes.forEach((cn) => {
+          const local = noteMap.get(cn.id);
           if (!local || cn.updatedAt >= local.updatedAt) {
-            existingNotesMap.set(cn.id, cn);
+            noteMap.set(cn.id, cn);
           }
         });
 
-        const mergedNotes = Array.from(existingNotesMap.values());
-        
-        // Ensure folders from cloud are represented
-        const existingFoldersMap = new Map(state.folders.map(f => [f.id, f]));
-        cloudFolders.forEach(cf => {
-          existingFoldersMap.set(cf.id, cf);
-        });
-        const mergedFolders = Array.from(existingFoldersMap.values());
-
+        const mergedNotes = Array.from(noteMap.values());
         localStorage.setItem(STORAGE_NOTES, JSON.stringify(mergedNotes));
+
+        // Clean up openTabIds if any open tab was deleted from cloud
+        const validNoteIds = new Set(mergedNotes.map((n) => n.id));
+        const openTabIds = state.openTabIds.filter((id) => validNoteIds.has(id));
+        let activeNoteId = state.activeNoteId;
+        if (activeNoteId && !validNoteIds.has(activeNoteId)) {
+          activeNoteId = openTabIds.length > 0 ? openTabIds[openTabIds.length - 1] : null;
+        }
+
+        localStorage.setItem(STORAGE_TABS, JSON.stringify(openTabIds));
+        if (activeNoteId) {
+          localStorage.setItem(STORAGE_ACTIVE_NOTE, activeNoteId);
+        } else {
+          localStorage.removeItem(STORAGE_ACTIVE_NOTE);
+        }
+
+        return {
+          notes: mergedNotes,
+          openTabIds,
+          activeNoteId,
+          syncStatus: 'synced',
+        };
+      });
+    },
+
+    setCloudFolders: (cloudFolders) => {
+      set((state) => {
+        const cloudIds = new Set(cloudFolders.map((cf) => cf.id));
+        const currentUserId = state.currentUser?.uid;
+
+        // Keep local folders that don't belong to current user unless cloud folders exist
+        const retainedFolders = state.folders.filter((f) => {
+          if (f.userId && f.userId === currentUserId) {
+            return cloudIds.has(f.id);
+          }
+          if (!f.userId && cloudFolders.length > 0) {
+            return false;
+          }
+          return true;
+        });
+
+        const folderMap = new Map(retainedFolders.map((f) => [f.id, f]));
+        cloudFolders.forEach((cf) => {
+          folderMap.set(cf.id, cf);
+        });
+
+        const mergedFolders = Array.from(folderMap.values());
         localStorage.setItem(STORAGE_FOLDERS, JSON.stringify(mergedFolders));
 
-        // If user has never had an expand state stored on this device, default to expanding all folders
         const key = getExpandedStorageKey(state.currentUser?.uid);
         let expandedFolderIds = state.expandedFolderIds;
         if (localStorage.getItem(key) === null && mergedFolders.length > 0) {
@@ -801,12 +850,20 @@ export const useNoteStore = create<NoteState>((set, get) => {
         }
 
         return {
-          notes: mergedNotes,
           folders: mergedFolders,
           syncStatus: 'synced',
           expandedFolderIds,
         };
       });
+    },
+
+    setCloudData: (cloudNotes, cloudFolders) => {
+      if (cloudNotes && cloudNotes.length > 0) {
+        get().setCloudNotes(cloudNotes);
+      }
+      if (cloudFolders && cloudFolders.length > 0) {
+        get().setCloudFolders(cloudFolders);
+      }
     },
 
     initSyncListeners: () => {
