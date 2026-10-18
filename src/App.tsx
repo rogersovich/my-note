@@ -23,6 +23,10 @@ export const App: React.FC = () => {
     toggleSidebar,
     setViewMode,
     createMultipleNotes,
+    openTabIds,
+    activeNoteId,
+    setActiveNoteId,
+    closeTab,
   } = useNoteStore();
 
   const [isFirebaseModalOpen, setIsFirebaseModalOpen] = useState(false);
@@ -94,21 +98,63 @@ export const App: React.FC = () => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
       }
-      // Ctrl+B: Toggle Sidebar
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'B') {
+
+      // Ctrl+Shift+B: Toggle Sidebar
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'B' || e.key === 'b')) {
         e.preventDefault();
         toggleSidebar();
       }
-      // Ctrl+P: Toggle Preview / Split
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
+
+      // Ctrl+Shift+P: Toggle Preview / Split
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
         e.preventDefault();
         setViewMode(viewMode === 'preview' ? 'split' : 'preview');
+      }
+
+      // Ctrl+W or Alt+W: Close active tab
+      if (
+        ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w') ||
+        (e.altKey && e.key.toLowerCase() === 'w')
+      ) {
+        e.preventDefault();
+        if (activeNoteId) {
+          closeTab(activeNoteId);
+        }
+      }
+
+      // Tab switching shortcuts:
+      // Next: Ctrl+Tab (when available), Ctrl+PageDown, Alt+ArrowRight
+      // Prev: Ctrl+Shift+Tab (when available), Ctrl+PageUp, Alt+ArrowLeft
+      const isNextTab =
+        ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key === 'Tab') ||
+        ((e.ctrlKey || e.metaKey) && e.key === 'PageDown') ||
+        (e.altKey && e.key === 'ArrowRight');
+
+      const isPrevTab =
+        ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Tab') ||
+        ((e.ctrlKey || e.metaKey) && e.key === 'PageUp') ||
+        (e.altKey && e.key === 'ArrowLeft');
+
+      if (isNextTab) {
+        e.preventDefault();
+        if (openTabIds.length > 1) {
+          const currentIndex = activeNoteId ? openTabIds.indexOf(activeNoteId) : -1;
+          const nextIndex = (currentIndex + 1) % openTabIds.length;
+          setActiveNoteId(openTabIds[nextIndex]);
+        }
+      } else if (isPrevTab) {
+        e.preventDefault();
+        if (openTabIds.length > 1) {
+          const currentIndex = activeNoteId ? openTabIds.indexOf(activeNoteId) : -1;
+          const prevIndex = (currentIndex - 1 + openTabIds.length) % openTabIds.length;
+          setActiveNoteId(openTabIds[prevIndex]);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleSidebar, setViewMode, viewMode]);
+  }, [toggleSidebar, setViewMode, viewMode, openTabIds, activeNoteId, setActiveNoteId, closeTab]);
 
   const [isDraggingOverApp, setIsDraggingOverApp] = useState(false);
   const dragCounter = useRef(0);

@@ -50,7 +50,7 @@ export const TabBar: React.FC = () => {
               <span className="truncate flex-1">{note.title}</span>
 
               {/* Close Button */}
-              <Tooltip content="Tutup Tab" position="bottom">
+              <Tooltip content="Tutup Tab (Ctrl+W)" position="bottom">
                 <button
                   type="button"
                   onClick={(e) => {

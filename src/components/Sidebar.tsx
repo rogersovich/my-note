@@ -15,7 +15,8 @@ import {
   ChevronRight, 
   ChevronDown,
   X,
-  Copy
+  Copy,
+  RotateCcw
 } from 'lucide-react';
 import type { Folder, Note } from '../types';
 import { useConfirmStore } from '../store/useConfirmStore';
@@ -37,7 +38,10 @@ export const Sidebar: React.FC = () => {
     renameFolder,
     deleteFolder,
     renameNote,
-    deleteNote,
+    moveToTrash,
+    restoreFromTrash,
+    deletePermanently,
+    emptyTrash,
     toggleFavorite,
     moveNotesToFolder,
     createMultipleNotes,
@@ -51,6 +55,8 @@ export const Sidebar: React.FC = () => {
   } = useNoteStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isTrashExpanded, setIsTrashExpanded] = useState(false);
 
   // Modal / Inline input states
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
@@ -201,6 +207,8 @@ export const Sidebar: React.FC = () => {
 
   // Filter notes based on category and search query
   const filteredNotes = notes.filter((note) => {
+    if (note.isTrash) return false;
+
     // Search query filter
     const matchesSearch =
       searchQuery.trim() === '' ||
@@ -217,6 +225,8 @@ export const Sidebar: React.FC = () => {
     }
     return true;
   });
+
+  const trashedNotes = notes.filter((note) => Boolean(note.isTrash));
 
   const handleCreateFolderSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -426,17 +436,17 @@ export const Sidebar: React.FC = () => {
             </button>
           </Tooltip>
 
-          <Tooltip content="Hapus Catatan" position="top">
+          <Tooltip content="Pindahkan ke Sampah" position="top">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 confirmAction({
-                  title: 'Hapus Catatan',
-                  message: `Apakah Anda yakin ingin menghapus catatan "${note.title}"?`,
-                  confirmText: 'Hapus',
+                  title: 'Pindahkan ke Sampah',
+                  message: `Apakah Anda yakin ingin memindahkan catatan "${note.title}" ke Sampah?`,
+                  confirmText: 'Pindahkan ke Sampah',
                   variant: 'danger',
-                  onConfirm: () => deleteNote(note.id),
+                  onConfirm: () => moveToTrash(note.id),
                 });
               }}
               className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-rose-400"
@@ -918,6 +928,105 @@ export const Sidebar: React.FC = () => {
             No notes found. Click <span className="text-blue-400 font-medium">+ File</span> or drag `.md` / `.txt` files here to start.
           </div>
         )}
+
+        {/* Sampah / Trash Section */}
+        <div className="mt-4 pt-2 border-t border-[#1e2636]">
+          <div
+            onClick={() => setIsTrashExpanded(!isTrashExpanded)}
+            className="flex items-center justify-between px-2 py-1.5 rounded cursor-pointer text-xs text-slate-400 hover:text-slate-200 hover:bg-[#141824] transition-colors group select-none"
+          >
+            <div className="flex items-center gap-1.5 min-w-0">
+              {isTrashExpanded ? (
+                <ChevronDown className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-slate-400" />
+              )}
+              <Trash2 className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-rose-400 transition-colors" />
+              <span className="font-medium text-slate-300">Sampah</span>
+              <span className="text-[10px] px-1.5 py-0.2 bg-[#182030] text-slate-400 rounded-full font-mono border border-[#2b3548]">
+                {trashedNotes.length}
+              </span>
+            </div>
+
+            {trashedNotes.length > 0 && isTrashExpanded && (
+              <Tooltip content="Kosongkan Sampah" position="top">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    confirmAction({
+                      title: 'Kosongkan Sampah',
+                      message: `Apakah Anda yakin ingin menghapus permanen semua ${trashedNotes.length} catatan di Sampah? Tindakan ini tidak dapat dibatalkan.`,
+                      confirmText: 'Kosongkan Sampah',
+                      variant: 'danger',
+                      onConfirm: () => emptyTrash(),
+                    });
+                  }}
+                  className="text-[10px] text-rose-400 hover:text-rose-300 hover:underline px-1 py-0.5 transition-colors"
+                >
+                  Kosongkan
+                </button>
+              </Tooltip>
+            )}
+          </div>
+
+          {/* Trashed notes list */}
+          {isTrashExpanded && (
+            <div className="pl-3 pr-1 py-1 space-y-0.5">
+              {trashedNotes.length === 0 ? (
+                <div className="text-[11px] text-slate-500 italic py-1.5 px-3">
+                  Sampah kosong
+                </div>
+              ) : (
+                trashedNotes.map((note) => (
+                  <div
+                    key={note.id}
+                    className="group flex items-center justify-between py-1.5 px-2 rounded text-xs text-slate-400 hover:bg-[#141824] hover:text-slate-200 transition-colors"
+                  >
+                    <div className="flex items-center gap-2 truncate min-w-0 flex-1 mr-1">
+                      <FileText className="w-3.5 h-3.5 shrink-0 text-slate-500" />
+                      <span className="truncate line-through decoration-slate-600 text-slate-400 group-hover:text-slate-300 font-normal" title={note.title}>
+                        {note.title}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <Tooltip content="Pulihkan Catatan" position="top">
+                        <button
+                          type="button"
+                          onClick={() => restoreFromTrash(note.id)}
+                          className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-emerald-400 transition-colors"
+                          aria-label="Pulihkan Catatan"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                        </button>
+                      </Tooltip>
+
+                      <Tooltip content="Hapus Permanen" position="top">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            confirmAction({
+                              title: 'Hapus Permanen',
+                              message: `Hapus permanen catatan "${note.title}"? Tindakan ini tidak dapat dibatalkan.`,
+                              confirmText: 'Hapus Permanen',
+                              variant: 'danger',
+                              onConfirm: () => deletePermanently(note.id),
+                            });
+                          }}
+                          className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-rose-400 transition-colors"
+                          aria-label="Hapus Permanen"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Tooltip>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bottom Drop Zone / Helper */}
@@ -935,7 +1044,7 @@ export const Sidebar: React.FC = () => {
         }}
         className="p-2.5 border-t border-[#1e2636] text-xs font-medium text-slate-300 flex items-center justify-between bg-[#0b0d13]"
       >
-        <span>Total: {notes.length} notes</span>
+        <span>Total: {notes.filter(n => !n.isTrash).length} notes</span>
         <span>{folders.length} folders</span>
       </div>
 
@@ -994,12 +1103,12 @@ export const Sidebar: React.FC = () => {
                     onClick={() => {
                       setContextMenu((prev) => ({ ...prev, isOpen: false }));
                       confirmAction({
-                        title: 'Hapus Catatan Terpilih',
-                        message: `Apakah Anda yakin ingin menghapus ${selectedNoteIds.length} catatan terpilih? Tindakan ini tidak dapat dibatalkan.`,
-                        confirmText: `Hapus ${selectedNoteIds.length} Catatan`,
+                        title: 'Pindahkan Catatan Terpilih ke Sampah',
+                        message: `Apakah Anda yakin ingin memindahkan ${selectedNoteIds.length} catatan terpilih ke Sampah?`,
+                        confirmText: `Pindahkan ke Sampah`,
                         variant: 'danger',
                         onConfirm: () => {
-                          selectedNoteIds.forEach((id) => deleteNote(id));
+                          selectedNoteIds.forEach((id) => moveToTrash(id));
                           setSelectedNoteIds([]);
                         },
                       });
@@ -1007,7 +1116,7 @@ export const Sidebar: React.FC = () => {
                     className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span>Hapus {selectedNoteIds.length} Catatan</span>
+                    <span>Pindahkan {selectedNoteIds.length} Catatan ke Sampah</span>
                   </button>
                 </div>
               );
@@ -1082,17 +1191,17 @@ export const Sidebar: React.FC = () => {
                   onClick={() => {
                     setContextMenu((prev) => ({ ...prev, isOpen: false }));
                     confirmAction({
-                      title: 'Hapus Catatan',
-                      message: `Apakah Anda yakin ingin menghapus catatan "${currentNote.title}"?`,
-                      confirmText: 'Hapus',
+                      title: 'Pindahkan ke Sampah',
+                      message: `Apakah Anda yakin ingin memindahkan catatan "${currentNote.title}" ke Sampah?`,
+                      confirmText: 'Pindahkan ke Sampah',
                       variant: 'danger',
-                      onConfirm: () => deleteNote(currentNote.id),
+                      onConfirm: () => moveToTrash(currentNote.id),
                     });
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Hapus Catatan</span>
+                  <span>Pindahkan ke Sampah</span>
                 </button>
               </div>
             );

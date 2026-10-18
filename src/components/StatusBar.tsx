@@ -4,7 +4,7 @@ import { countWordsAndChars } from '../utils/editorUtils';
 import { Folder, FileText, CheckCircle2, Cloud } from 'lucide-react';
 
 export const StatusBar: React.FC = () => {
-  const { notes, folders, activeNoteId, syncStatus, currentUser } = useNoteStore();
+  const { notes, folders, activeNoteId, syncStatus, isSaving, currentUser } = useNoteStore();
 
   const activeNote = notes.find((n) => n.id === activeNoteId);
   const activeFolder = activeNote?.folderId
@@ -38,11 +38,18 @@ export const StatusBar: React.FC = () => {
             </div>
 
             <span className="hidden sm:inline text-slate-600">•</span>
-            <span className="hidden sm:inline text-[10px] text-slate-300 font-mono">
-              {activeNote.updatedAt
-                ? `Saved ${new Date(activeNote.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                : 'Unsaved'}
-            </span>
+            {isSaving ? (
+              <span className="inline-flex items-center gap-1.5 text-[10px] text-amber-400 font-mono font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                Menyimpan...
+              </span>
+            ) : (
+              <span className="hidden sm:inline text-[10px] text-slate-300 font-mono">
+                {activeNote.updatedAt
+                  ? `Tersimpan ${new Date(activeNote.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                  : 'Tersimpan'}
+              </span>
+            )}
           </>
         ) : (
           <span className="text-slate-400">No note selected</span>

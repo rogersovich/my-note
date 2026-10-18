@@ -107,6 +107,7 @@ interface NoteState {
   syncScrollEnabled: boolean;
   fontSize: number;
   syncStatus: SyncStatus;
+  isSaving: boolean;
 
   // Auth & Cloud
   currentUser: UserProfile | null;
@@ -131,6 +132,10 @@ interface NoteState {
   updateNoteContent: (id: string, content: string) => void;
   renameNote: (id: string, newTitle: string) => void;
   deleteNote: (id: string) => void;
+  moveToTrash: (id: string) => void;
+  restoreFromTrash: (id: string) => void;
+  deletePermanently: (id: string) => void;
+  emptyTrash: () => void;
   toggleFavorite: (id: string) => void;
   moveNoteToFolder: (noteId: string, folderId: string | null) => void;
   moveNotesToFolder: (noteIds: string[], folderId: string | null) => void;
@@ -148,6 +153,7 @@ interface NoteState {
 }
 
 let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let typingDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 const initialTabState = loadInitialTabs();
 
@@ -178,6 +184,11 @@ export const useNoteStore = create<NoteState>((set, get) => {
           localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
           return { notes };
         });
+      } else if (type === 'NOTES_UPDATED') {
+        set(() => {
+          localStorage.setItem(STORAGE_NOTES, JSON.stringify(payload));
+          return { notes: payload };
+        });
       } else if (type === 'FOLDER_UPDATED') {
         set(() => {
           localStorage.setItem(STORAGE_FOLDERS, JSON.stringify(payload));
@@ -205,6 +216,7 @@ export const useNoteStore = create<NoteState>((set, get) => {
     syncScrollEnabled: true,
     fontSize: 14,
     syncStatus: 'local',
+    isSaving: false,
 
     currentUser: null,
     isFirebaseConfigured: !!getStoredFirebaseConfig(),
@@ -385,6 +397,12 @@ export const useNoteStore = create<NoteState>((set, get) => {
       const now = Date.now();
       let updatedNote: Note | null = null;
 
+      // Typing indicator with 400ms debounce
+      if (typingDebounceTimer) clearTimeout(typingDebounceTimer);
+      typingDebounceTimer = setTimeout(() => {
+        set({ isSaving: false });
+      }, 400);
+
       // 1. Instant local update
       set((state) => {
         const notes = state.notes.map((n) => {
@@ -395,7 +413,7 @@ export const useNoteStore = create<NoteState>((set, get) => {
           return n;
         });
         localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
-        return { notes, syncStatus: 'saving' };
+        return { notes, isSaving: true, syncStatus: 'saving' };
       });
 
       // 2. Broadcast immediately to other tabs on same machine
@@ -446,6 +464,74 @@ export const useNoteStore = create<NoteState>((set, get) => {
     },
 
     deleteNote: (id) => {
+      get().moveToTrash(id);
+    },
+
+    moveToTrash: (id) => {
+      const now = Date.now();
+      let trashedNote: Note | null = null;
+
+      set((state) => {
+        const notes = state.notes.map((n) => {
+          if (n.id === id) {
+            trashedNote = { ...n, isTrash: true, deletedAt: now, updatedAt: now };
+            return trashedNote;
+          }
+          return n;
+        });
+        const openTabIds = state.openTabIds.filter((tId) => tId !== id);
+        let activeNoteId = state.activeNoteId;
+        if (activeNoteId === id) {
+          activeNoteId = openTabIds.length > 0 ? openTabIds[openTabIds.length - 1] : null;
+        }
+        localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
+        localStorage.setItem(STORAGE_TABS, JSON.stringify(openTabIds));
+        if (activeNoteId) {
+          localStorage.setItem(STORAGE_ACTIVE_NOTE, activeNoteId);
+        } else {
+          localStorage.removeItem(STORAGE_ACTIVE_NOTE);
+        }
+        return { notes, openTabIds, activeNoteId };
+      });
+
+      broadcastChannel?.postMessage({ type: 'NOTES_UPDATED', payload: get().notes });
+
+      if (trashedNote && get().currentUser) {
+        syncNoteToFirestore(trashedNote);
+      }
+    },
+
+    restoreFromTrash: (id) => {
+      const now = Date.now();
+      let restoredNote: Note | null = null;
+
+      set((state) => {
+        const notes = state.notes.map((n) => {
+          if (n.id === id) {
+            restoredNote = { ...n, isTrash: false, deletedAt: undefined, updatedAt: now };
+            return restoredNote;
+          }
+          return n;
+        });
+        const openTabIds = state.openTabIds.includes(id)
+          ? state.openTabIds
+          : [...state.openTabIds, id];
+
+        localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
+        localStorage.setItem(STORAGE_TABS, JSON.stringify(openTabIds));
+        localStorage.setItem(STORAGE_ACTIVE_NOTE, id);
+
+        return { notes, openTabIds, activeNoteId: id };
+      });
+
+      broadcastChannel?.postMessage({ type: 'NOTES_UPDATED', payload: get().notes });
+
+      if (restoredNote && get().currentUser) {
+        syncNoteToFirestore(restoredNote);
+      }
+    },
+
+    deletePermanently: (id) => {
       set((state) => {
         const notes = state.notes.filter((n) => n.id !== id);
         const openTabIds = state.openTabIds.filter((tId) => tId !== id);
@@ -467,6 +553,35 @@ export const useNoteStore = create<NoteState>((set, get) => {
 
       if (get().currentUser) {
         deleteNoteFromFirestore(id);
+      }
+    },
+
+    emptyTrash: () => {
+      const toDeleteIds = get().notes.filter((n) => n.isTrash).map((n) => n.id);
+      if (toDeleteIds.length === 0) return;
+
+      const toDeleteSet = new Set(toDeleteIds);
+      set((state) => {
+        const notes = state.notes.filter((n) => !toDeleteSet.has(n.id));
+        const openTabIds = state.openTabIds.filter((id) => !toDeleteSet.has(id));
+        let activeNoteId = state.activeNoteId;
+        if (activeNoteId && toDeleteSet.has(activeNoteId)) {
+          activeNoteId = openTabIds.length > 0 ? openTabIds[openTabIds.length - 1] : null;
+        }
+        localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
+        localStorage.setItem(STORAGE_TABS, JSON.stringify(openTabIds));
+        if (activeNoteId) {
+          localStorage.setItem(STORAGE_ACTIVE_NOTE, activeNoteId);
+        } else {
+          localStorage.removeItem(STORAGE_ACTIVE_NOTE);
+        }
+        return { notes, openTabIds, activeNoteId };
+      });
+
+      broadcastChannel?.postMessage({ type: 'NOTES_UPDATED', payload: get().notes });
+
+      if (get().currentUser) {
+        toDeleteIds.forEach((id) => deleteNoteFromFirestore(id));
       }
     },
 
