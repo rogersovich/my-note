@@ -97,6 +97,8 @@ interface NoteState {
   deleteNote: (id: string) => void;
   toggleFavorite: (id: string) => void;
   moveNoteToFolder: (noteId: string, folderId: string | null) => void;
+  moveNotesToFolder: (noteIds: string[], folderId: string | null) => void;
+  createMultipleNotes: (files: { title: string; content?: string }[], folderId?: string | null) => string[];
 
   // Folder actions
   createFolder: (name: string, parentId?: string | null, color?: string) => string;
@@ -284,6 +286,58 @@ export const useNoteStore = create<NoteState>((set, get) => {
       return id;
     },
 
+    createMultipleNotes: (files, folderId = null) => {
+      if (files.length === 0) return [];
+      const user = get().currentUser;
+      const createdNotes: Note[] = [];
+      const ids: string[] = [];
+
+      files.forEach((file, index) => {
+        const id = 'note-' + (Date.now() + index) + '-' + Math.random().toString(36).substring(2, 7);
+        const title = file.title || 'Untitled.md';
+        const content = file.content !== undefined 
+          ? file.content 
+          : `# ${title.replace(/\.[^/.]+$/, '')}\n\nStart typing here...`;
+
+        const newNote: Note = {
+          id,
+          title,
+          content,
+          folderId,
+          isFavorite: false,
+          createdAt: Date.now() + index,
+          updatedAt: Date.now() + index,
+          userId: user ? user.uid : undefined,
+        };
+        createdNotes.push(newNote);
+        ids.push(id);
+      });
+
+      const firstId = ids[0];
+
+      set((state) => {
+        const notes = [...createdNotes, ...state.notes];
+        const newTabs = [...state.openTabIds];
+        ids.forEach((id) => {
+          if (!newTabs.includes(id)) newTabs.push(id);
+        });
+        localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
+        localStorage.setItem(STORAGE_TABS, JSON.stringify(newTabs));
+        localStorage.setItem(STORAGE_ACTIVE_NOTE, firstId);
+        return { notes, openTabIds: newTabs, activeNoteId: firstId };
+      });
+
+      // Broadcast and sync
+      createdNotes.forEach((newNote) => {
+        broadcastChannel?.postMessage({ type: 'NOTE_CREATED', payload: newNote });
+        if (user) {
+          syncNoteToFirestore(newNote).catch(console.error);
+        }
+      });
+
+      return ids;
+    },
+
     updateNoteContent: (id, content) => {
       const now = Date.now();
       let updatedNote: Note | null = null;
@@ -393,12 +447,20 @@ export const useNoteStore = create<NoteState>((set, get) => {
     },
 
     moveNoteToFolder: (noteId, folderId) => {
-      let updatedNote: Note | null = null;
+      get().moveNotesToFolder([noteId], folderId);
+    },
+
+    moveNotesToFolder: (noteIds, folderId) => {
+      if (noteIds.length === 0) return;
+      const idSet = new Set(noteIds);
+      const updatedNotes: Note[] = [];
+
       set((state) => {
         const notes = state.notes.map((n) => {
-          if (n.id === noteId) {
-            updatedNote = { ...n, folderId, updatedAt: Date.now() };
-            return updatedNote;
+          if (idSet.has(n.id)) {
+            const updated = { ...n, folderId, updatedAt: Date.now() };
+            updatedNotes.push(updated);
+            return updated;
           }
           return n;
         });
@@ -406,8 +468,8 @@ export const useNoteStore = create<NoteState>((set, get) => {
         return { notes };
       });
 
-      if (updatedNote && get().currentUser) {
-        syncNoteToFirestore(updatedNote);
+      if (get().currentUser) {
+        updatedNotes.forEach((n) => syncNoteToFirestore(n).catch(console.error));
       }
     },
 

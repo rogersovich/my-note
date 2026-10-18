@@ -32,7 +32,8 @@ export const Sidebar: React.FC = () => {
     renameNote,
     deleteNote,
     toggleFavorite,
-    moveNoteToFolder,
+    moveNotesToFolder,
+    createMultipleNotes,
     expandedFolderIds,
     toggleFolderExpanded,
     searchQuery,
@@ -59,8 +60,17 @@ export const Sidebar: React.FC = () => {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingNoteTitle, setEditingNoteTitle] = useState('');
 
-  const [draggedNoteId, setDraggedNoteId] = useState<string | null>(null);
+  const [draggedNoteIds, setDraggedNoteIds] = useState<string[]>([]);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<string[]>(activeNoteId ? [activeNoteId] : []);
+  const [lastClickedNoteId, setLastClickedNoteId] = useState<string | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null | 'root'>(null);
+
+  // Sync selectedNoteIds with activeNoteId if single-select
+  useEffect(() => {
+    if (activeNoteId && (!selectedNoteIds.length || (selectedNoteIds.length === 1 && !selectedNoteIds.includes(activeNoteId)))) {
+      setSelectedNoteIds([activeNoteId]);
+    }
+  }, [activeNoteId]);
 
   // Context Menu State
   const [contextMenu, setContextMenu] = useState<{
@@ -109,43 +119,67 @@ export const Sidebar: React.FC = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      try {
-        const text = await file.text();
-        createNote(file.name, targetFolderIdForNote || null, text);
-      } catch (err) {
-        console.error('Failed to read file:', file.name, err);
-      }
+    const fileList = Array.from(files);
+    const parsedFiles = await Promise.all(
+      fileList.map(async (file) => {
+        try {
+          const content = await file.text();
+          return { title: file.name, content };
+        } catch (err) {
+          console.error('Failed to read file:', file.name, err);
+          return null;
+        }
+      })
+    );
+
+    const validFiles = parsedFiles.filter((f): f is { title: string; content: string } => f !== null);
+    if (validFiles.length > 0) {
+      createMultipleNotes(validFiles, targetFolderIdForNote || null);
     }
 
     if (fileInputRef.current) fileInputRef.current.value = '';
     setTargetFolderIdForNote(null);
   };
 
-  // Drag and drop local files from OS onto browser sidebar
+  // Drag and drop local files from OS or move multiple notes internally
   const handleFileDropFromOs = async (e: React.DragEvent, folderId: string | null) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverFolderId(null);
 
-    // If dragging an existing internal note
-    if (draggedNoteId) {
-      moveNoteToFolder(draggedNoteId, folderId);
-      setDraggedNoteId(null);
+    // 1. If dragging existing internal notes
+    let notesToMove = draggedNoteIds;
+    if (notesToMove.length === 0) {
+      try {
+        const raw = e.dataTransfer.getData('application/json-mynote-ids');
+        if (raw) notesToMove = JSON.parse(raw);
+      } catch {}
+    }
+
+    if (notesToMove.length > 0) {
+      moveNotesToFolder(notesToMove, folderId);
+      setDraggedNoteIds([]);
       return;
     }
 
-    // If dragging external files from OS
+    // 2. If dragging external files from OS
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      for (let i = 0; i < e.dataTransfer.files.length; i++) {
-        const file = e.dataTransfer.files[i];
-        try {
-          const content = await file.text();
-          createNote(file.name, folderId, content);
-        } catch (err) {
-          console.error('Failed to read dropped file', err);
-        }
+      const fileList = Array.from(e.dataTransfer.files);
+      const parsedFiles = await Promise.all(
+        fileList.map(async (file) => {
+          try {
+            const content = await file.text();
+            return { title: file.name, content };
+          } catch (err) {
+            console.error('Failed to read dropped file', err);
+            return null;
+          }
+        })
+      );
+
+      const validFiles = parsedFiles.filter((f): f is { title: string; content: string } => f !== null);
+      if (validFiles.length > 0) {
+        createMultipleNotes(validFiles, folderId);
       }
     }
   };
@@ -210,6 +244,7 @@ export const Sidebar: React.FC = () => {
   // Render Note List Item
   const renderNoteItem = (note: Note, depth: number = 0) => {
     const isActive = note.id === activeNoteId;
+    const isSelected = selectedNoteIds.includes(note.id);
     const isMd = note.title.endsWith('.md');
     const isEditing = editingNoteId === note.id;
 
@@ -240,13 +275,71 @@ export const Sidebar: React.FC = () => {
       <div
         key={note.id}
         draggable
-        onDragStart={() => setDraggedNoteId(note.id)}
-        onDragEnd={() => setDraggedNoteId(null)}
-        onClick={() => setActiveNoteId(note.id)}
+        onDragStart={(e) => {
+          let toDrag: string[];
+          if (selectedNoteIds.includes(note.id)) {
+            toDrag = selectedNoteIds;
+          } else {
+            toDrag = [note.id];
+            setSelectedNoteIds([note.id]);
+          }
+          setDraggedNoteIds(toDrag);
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', JSON.stringify(toDrag));
+          e.dataTransfer.setData('application/json-mynote-ids', JSON.stringify(toDrag));
+        }}
+        onDragEnd={() => {
+          setDraggedNoteIds([]);
+          setDragOverFolderId(null);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          if (!draggedNoteIds.includes(note.id)) {
+            e.dataTransfer.dropEffect = 'move';
+          }
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          handleFileDropFromOs(e, note.folderId);
+        }}
+        onClick={(e) => {
+          if (e.ctrlKey || e.metaKey) {
+            setSelectedNoteIds((prev) => {
+              const exists = prev.includes(note.id);
+              const next = exists ? prev.filter((id) => id !== note.id) : [...prev, note.id];
+              if (!exists) {
+                setActiveNoteId(note.id);
+              } else if (next.length > 0) {
+                setActiveNoteId(next[next.length - 1]);
+              }
+              return next;
+            });
+            setLastClickedNoteId(note.id);
+          } else if (e.shiftKey && lastClickedNoteId) {
+            const currentIndex = filteredNotes.findIndex((n) => n.id === note.id);
+            const lastIndex = filteredNotes.findIndex((n) => n.id === lastClickedNoteId);
+            if (currentIndex !== -1 && lastIndex !== -1) {
+              const start = Math.min(currentIndex, lastIndex);
+              const end = Math.max(currentIndex, lastIndex);
+              const rangeIds = filteredNotes.slice(start, end + 1).map((n) => n.id);
+              setSelectedNoteIds(rangeIds);
+              setActiveNoteId(note.id);
+            }
+          } else {
+            setSelectedNoteIds([note.id]);
+            setActiveNoteId(note.id);
+            setLastClickedNoteId(note.id);
+          }
+        }}
         onContextMenu={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          setActiveNoteId(note.id);
+          if (!selectedNoteIds.includes(note.id)) {
+            setSelectedNoteIds([note.id]);
+            setActiveNoteId(note.id);
+            setLastClickedNoteId(note.id);
+          }
           setContextMenu({
             isOpen: true,
             x: e.clientX,
@@ -259,16 +352,23 @@ export const Sidebar: React.FC = () => {
         className={`group flex items-center justify-between py-1.5 pr-2 rounded-md cursor-pointer text-xs transition-colors my-0.5 ${
           isActive
             ? 'bg-[#182030] text-white font-medium border-l-2 border-blue-500'
+            : isSelected
+            ? 'bg-[#141b29] text-blue-200 font-medium border-l-2 border-blue-400'
             : 'text-slate-300 hover:bg-[#141824] hover:text-white'
         }`}
       >
         <div className="flex items-center gap-2 truncate min-w-0 flex-1 mr-1">
           {isMd ? (
-            <FileCode className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
+            <FileCode className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-400' : isSelected ? 'text-blue-300' : 'text-slate-400 group-hover:text-slate-200'}`} />
           ) : (
-            <FileText className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
+            <FileText className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-400' : isSelected ? 'text-blue-300' : 'text-slate-400 group-hover:text-slate-200'}`} />
           )}
           <span className="truncate">{note.title}</span>
+          {isSelected && selectedNoteIds.length > 1 && (
+            <span className="shrink-0 px-1 py-0.2 text-[9px] font-mono bg-blue-900/60 text-blue-300 rounded border border-blue-700/50">
+              sel
+            </span>
+          )}
         </div>
 
         {/* Action icons on hover */}
@@ -450,6 +550,12 @@ export const Sidebar: React.FC = () => {
             {childNotes.map((n) => renderNoteItem(n, depth + 1))}
             {childFolders.length === 0 && childNotes.length === 0 && (
               <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOverFolderId(folder.id);
+                }}
+                onDragLeave={() => setDragOverFolderId(null)}
+                onDrop={(e) => handleFileDropFromOs(e, folder.id)}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -462,8 +568,12 @@ export const Sidebar: React.FC = () => {
                   });
                 }}
                 style={{ paddingLeft: `${(depth + 1) * 14 + 16}px` }}
-                className="py-1 text-[11px] text-slate-400 italic cursor-pointer hover:text-slate-300 transition-colors"
-                title="Klik kanan untuk menambah file di folder ini"
+                className={`py-1 text-[11px] italic cursor-pointer transition-colors ${
+                  dragOverFolderId === folder.id
+                    ? 'text-blue-300 bg-blue-950/40 rounded'
+                    : 'text-slate-400 hover:text-slate-300'
+                }`}
+                title="Klik kanan atau seret file ke sini untuk menambah file"
               >
                 Empty folder (drag files here)
               </div>
@@ -747,6 +857,59 @@ export const Sidebar: React.FC = () => {
           {contextMenu.type === 'note' && (() => {
             const currentNote = notes.find((n) => n.id === contextMenu.targetId);
             if (!currentNote) return null;
+
+            const isMultiSelected = selectedNoteIds.includes(currentNote.id) && selectedNoteIds.length > 1;
+
+            if (isMultiSelected) {
+              return (
+                <div className="flex flex-col">
+                  <div className="px-3 py-1.5 text-[11px] font-semibold text-blue-300 border-b border-[#1e2636] truncate">
+                    {selectedNoteIds.length} Catatan Dipilih
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      moveNotesToFolder(selectedNoteIds, null);
+                      setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                  >
+                    <FolderIcon className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Pindahkan ke Root</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      selectedNoteIds.forEach((id) => toggleFavorite(id));
+                      setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                  >
+                    <Star className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Toggle Favorit Semua</span>
+                  </button>
+
+                  <div className="h-[1px] bg-[#1e2636] my-1" />
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                      if (confirm(`Hapus ${selectedNoteIds.length} catatan terpilih?`)) {
+                        selectedNoteIds.forEach((id) => deleteNote(id));
+                        setSelectedNoteIds([]);
+                      }
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Hapus {selectedNoteIds.length} Catatan</span>
+                  </button>
+                </div>
+              );
+            }
 
             return (
               <div className="flex flex-col">
