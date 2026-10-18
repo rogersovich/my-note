@@ -16,7 +16,8 @@ import {
   ChevronDown,
   X,
   Copy,
-  RotateCcw
+  RotateCcw,
+  CheckCircle2
 } from 'lucide-react';
 import type { Folder, Note } from '../types';
 import { useConfirmStore } from '../store/useConfirmStore';
@@ -43,6 +44,7 @@ export const Sidebar: React.FC = () => {
     deletePermanently,
     emptyTrash,
     toggleFavorite,
+    toggleDone,
     moveNotesToFolder,
     createMultipleNotes,
     expandedFolderIds,
@@ -405,8 +407,26 @@ export const Sidebar: React.FC = () => {
           )}
         </div>
 
-        {/* Action icons on hover */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+        {/* Action icons: Check (Done) & Star (Favorite) */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <Tooltip content={note.isDone ? 'Tandai Belum Selesai' : 'Tandai Selesai (Done)'} position="top">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleDone(note.id);
+              }}
+              className={`p-1 rounded hover:bg-[#1e2738] transition-all ${
+                note.isDone
+                  ? 'opacity-100 text-emerald-400'
+                  : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-emerald-400'
+              }`}
+              aria-label={note.isDone ? 'Tandai Belum Selesai' : 'Tandai Selesai (Done)'}
+            >
+              <CheckCircle2 className={`w-3 h-3 ${note.isDone ? 'stroke-[2.5]' : ''}`} />
+            </button>
+          </Tooltip>
+
           <Tooltip content={note.isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'} position="top">
             <button
               type="button"
@@ -414,44 +434,14 @@ export const Sidebar: React.FC = () => {
                 e.stopPropagation();
                 toggleFavorite(note.id);
               }}
-              className={`p-1 rounded hover:bg-[#1e2738] ${
-                note.isFavorite ? 'text-amber-400 opacity-100' : 'text-slate-400 hover:text-amber-400'
+              className={`p-1 rounded hover:bg-[#1e2738] transition-all ${
+                note.isFavorite
+                  ? 'opacity-100 text-amber-400'
+                  : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-amber-400'
               }`}
+              aria-label={note.isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
             >
-              <Star className={`w-3 h-3 ${note.isFavorite ? 'fill-amber-400' : ''}`} />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="Ubah Nama" position="top">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditingNoteId(note.id);
-                setEditingNoteTitle(note.title);
-              }}
-              className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-slate-100"
-            >
-              <Edit3 className="w-3 h-3" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="Pindahkan ke Sampah" position="top">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                confirmAction({
-                  title: 'Pindahkan ke Sampah',
-                  message: `Apakah Anda yakin ingin memindahkan catatan "${note.title}" ke Sampah?`,
-                  confirmText: 'Pindahkan ke Sampah',
-                  variant: 'danger',
-                  onConfirm: () => moveToTrash(note.id),
-                });
-              }}
-              className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-rose-400"
-            >
-              <Trash2 className="w-3 h-3" />
+              <Star className={`w-3 h-3 ${note.isFavorite ? 'fill-amber-400 text-amber-400' : ''}`} />
             </button>
           </Tooltip>
         </div>
@@ -1096,6 +1086,18 @@ export const Sidebar: React.FC = () => {
                     <span>Toggle Favorit Semua</span>
                   </button>
 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      selectedNoteIds.forEach((id) => toggleDone(id));
+                      setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Toggle Selesai (Done) Semua</span>
+                  </button>
+
                   <div className="h-[1px] bg-[#1e2636] my-1" />
 
                   <button
@@ -1170,6 +1172,18 @@ export const Sidebar: React.FC = () => {
                 >
                   <Edit3 className="w-3.5 h-3.5 text-slate-400" />
                   <span>Ubah Nama</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleDone(currentNote.id);
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                >
+                  <CheckCircle2 className={`w-3.5 h-3.5 ${currentNote.isDone ? 'text-emerald-400 stroke-[2.5]' : 'text-slate-400'}`} />
+                  <span>{currentNote.isDone ? 'Tandai Belum Selesai' : 'Tandai Selesai (Done)'}</span>
                 </button>
 
                 <button

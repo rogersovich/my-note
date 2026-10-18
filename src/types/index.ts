@@ -9,6 +9,7 @@ export interface Note {
   userId?: string;
   isTrash?: boolean;
   deletedAt?: number;
+  isDone?: boolean;
 }
 
 export interface Folder {

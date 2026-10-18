@@ -1,17 +1,38 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useNoteStore } from '../store/useNoteStore';
-import { FileText, FileCode, X, Plus } from 'lucide-react';
+import { FileText, FileCode, CheckCircle2, X, Plus } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 
 export const TabBar: React.FC = () => {
   const { notes, openTabIds, activeNoteId, setActiveNoteId, closeTab, createNote } = useNoteStore();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const activeTabRef = useRef<HTMLDivElement>(null);
 
   const openNotes = openTabIds
     .map((id) => notes.find((n) => n.id === id))
     .filter((n): n is NonNullable<typeof n> => !!n);
 
+  // Auto-scroll to center the active tab whenever activeNoteId changes
+  useEffect(() => {
+    if (!activeTabRef.current || !containerRef.current) return;
+    const container = containerRef.current;
+    const tab = activeTabRef.current;
+
+    const containerWidth = container.clientWidth;
+    const tabLeft = tab.offsetLeft;
+    const tabWidth = tab.offsetWidth;
+
+    // Center active tab smoothly
+    const targetScrollLeft = tabLeft - containerWidth / 2 + tabWidth / 2;
+    container.scrollTo({
+      left: Math.max(0, targetScrollLeft),
+      behavior: 'smooth',
+    });
+  }, [activeNoteId]);
+
   return (
     <div 
+      ref={containerRef}
       onWheel={(e) => {
         if (e.deltaY !== 0) {
           e.currentTarget.scrollLeft += e.deltaY;
@@ -27,8 +48,9 @@ export const TabBar: React.FC = () => {
           return (
             <div
               key={note.id}
+              ref={isActive ? activeTabRef : null}
               onClick={() => setActiveNoteId(note.id)}
-              className={`group flex items-center h-full px-3.5 border-r border-[#1e2636] cursor-pointer text-xs transition-colors relative min-w-[130px] max-w-[200px] ${
+              className={`group flex items-center h-full px-3.5 border-r border-[#1e2636] cursor-pointer text-xs transition-colors relative min-w-[130px] max-w-[200px] shrink-0 ${
                 isActive
                   ? 'bg-[#161c28] text-white font-medium'
                   : 'bg-[#0e1118] text-slate-300 hover:bg-[#141824] hover:text-white'
@@ -40,7 +62,9 @@ export const TabBar: React.FC = () => {
               )}
 
               {/* Icon */}
-              {isMd ? (
+              {note.isDone ? (
+                <CheckCircle2 className="w-3.5 h-3.5 mr-2 shrink-0 text-emerald-400" />
+              ) : isMd ? (
                 <FileCode className={`w-3.5 h-3.5 mr-2 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
               ) : (
                 <FileText className={`w-3.5 h-3.5 mr-2 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />

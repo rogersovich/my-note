@@ -176,6 +176,7 @@ export function subscribeToUserData(
           userId: data.userId,
           isTrash: Boolean(data.isTrash),
           deletedAt: data.deletedAt || undefined,
+          isDone: Boolean(data.isDone),
         });
       });
       onNotesUpdate(notes);
@@ -227,6 +228,7 @@ export async function syncNoteToFirestore(note: Note): Promise<void> {
     userId: note.userId,
     isTrash: Boolean(note.isTrash),
     deletedAt: note.deletedAt || null,
+    isDone: Boolean(note.isDone),
   }, { merge: true });
 }
 

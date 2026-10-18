@@ -137,6 +137,7 @@ interface NoteState {
   deletePermanently: (id: string) => void;
   emptyTrash: () => void;
   toggleFavorite: (id: string) => void;
+  toggleDone: (id: string) => void;
   moveNoteToFolder: (noteId: string, folderId: string | null) => void;
   moveNotesToFolder: (noteIds: string[], folderId: string | null) => void;
   createMultipleNotes: (files: { title: string; content?: string }[], folderId?: string | null) => string[];
@@ -600,6 +601,27 @@ export const useNoteStore = create<NoteState>((set, get) => {
         localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
         return { notes };
       });
+
+      if (updatedNote && get().currentUser) {
+        syncNoteToFirestore(updatedNote);
+      }
+    },
+
+    toggleDone: (id) => {
+      let updatedNote: Note | null = null;
+      set((state) => {
+        const notes = state.notes.map((n) => {
+          if (n.id === id) {
+            updatedNote = { ...n, isDone: !n.isDone, updatedAt: Date.now() };
+            return updatedNote;
+          }
+          return n;
+        });
+        localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
+        return { notes };
+      });
+
+      broadcastChannel?.postMessage({ type: 'NOTES_UPDATED', payload: get().notes });
 
       if (updatedNote && get().currentUser) {
         syncNoteToFirestore(updatedNote);
