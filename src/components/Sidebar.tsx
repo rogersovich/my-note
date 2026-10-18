@@ -21,6 +21,10 @@ import type { Folder, Note } from '../types';
 import { useConfirmStore } from '../store/useConfirmStore';
 import { Tooltip } from './Tooltip';
 
+// Global reference so dragged IDs are never lost during drag & drop across re-renders
+let globalDraggedNoteIds: string[] = [];
+let clearDragTimeout: ReturnType<typeof setTimeout> | null = null;
+
 export const Sidebar: React.FC = () => {
   const { confirm: confirmAction } = useConfirmStore();
   const {
@@ -151,16 +155,24 @@ export const Sidebar: React.FC = () => {
     setDragOverFolderId(null);
 
     // 1. If dragging existing internal notes
-    let notesToMove = draggedNoteIds;
+    let notesToMove = globalDraggedNoteIds.length > 0 ? globalDraggedNoteIds : draggedNoteIds;
     if (notesToMove.length === 0) {
       try {
-        const raw = e.dataTransfer.getData('application/json-mynote-ids');
-        if (raw) notesToMove = JSON.parse(raw);
+        const raw =
+          e.dataTransfer.getData('application/json-mynote-ids') ||
+          e.dataTransfer.getData('text/plain');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            notesToMove = parsed;
+          }
+        }
       } catch {}
     }
 
     if (notesToMove.length > 0) {
       moveNotesToFolder(notesToMove, folderId);
+      globalDraggedNoteIds = [];
       setDraggedNoteIds([]);
       return;
     }
@@ -286,24 +298,33 @@ export const Sidebar: React.FC = () => {
             toDrag = [note.id];
             setSelectedNoteIds([note.id]);
           }
+          if (clearDragTimeout) clearTimeout(clearDragTimeout);
+          globalDraggedNoteIds = toDrag;
           setDraggedNoteIds(toDrag);
           e.dataTransfer.effectAllowed = 'move';
           e.dataTransfer.setData('text/plain', JSON.stringify(toDrag));
           e.dataTransfer.setData('application/json-mynote-ids', JSON.stringify(toDrag));
         }}
         onDragEnd={() => {
-          setDraggedNoteIds([]);
-          setDragOverFolderId(null);
+          if (clearDragTimeout) clearTimeout(clearDragTimeout);
+          clearDragTimeout = setTimeout(() => {
+            globalDraggedNoteIds = [];
+            setDraggedNoteIds([]);
+            setDragOverFolderId(null);
+          }, 150);
         }}
         onDragOver={(e) => {
           e.preventDefault();
-          if (!draggedNoteIds.includes(note.id)) {
-            e.dataTransfer.dropEffect = 'move';
+          e.stopPropagation();
+          e.dataTransfer.dropEffect = 'move';
+          if (note.folderId && dragOverFolderId !== note.folderId) {
+            setDragOverFolderId(note.folderId);
           }
         }}
         onDrop={(e) => {
           e.preventDefault();
           e.stopPropagation();
+          setDragOverFolderId(null);
           handleFileDropFromOs(e, note.folderId);
         }}
         onClick={(e) => {
@@ -471,23 +492,36 @@ export const Sidebar: React.FC = () => {
             }}
             onDragOver={(e) => {
               e.preventDefault();
-              setDragOverFolderId(folder.id);
+              e.stopPropagation();
+              e.dataTransfer.dropEffect = 'move';
+              if (dragOverFolderId !== folder.id) {
+                setDragOverFolderId(folder.id);
+              }
             }}
-            onDragLeave={() => setDragOverFolderId(null)}
-            onDrop={(e) => handleFileDropFromOs(e, folder.id)}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setDragOverFolderId((prev) => (prev === folder.id ? null : prev));
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragOverFolderId(null);
+              handleFileDropFromOs(e, folder.id);
+            }}
             style={{ paddingLeft: `${depth * 14 + 8}px` }}
             className={`group flex items-center justify-between py-1.5 pr-2 rounded-md cursor-pointer text-xs transition-colors my-0.5 ${
               isDragOver
-                ? 'bg-blue-950/60 border border-blue-500'
+                ? 'bg-blue-600/30 border border-blue-400 text-white shadow-sm'
                 : 'text-slate-200 hover:bg-[#141824]'
             }`}
           >
             {/* Folder Toggle & Name */}
             <div
               onClick={() => toggleFolderExpanded(folder.id)}
-              className="flex items-center gap-1.5 truncate min-w-0 flex-1 mr-1"
+              className="flex items-center gap-1.5 truncate min-w-0 flex-1 mr-1 pointer-events-none"
             >
-              <span className="text-slate-400 hover:text-slate-200 p-0.5">
+              <span className="text-slate-400 hover:text-slate-200 p-0.5 pointer-events-auto">
                 {isExpanded ? (
                   <ChevronDown className="w-3.5 h-3.5" />
                 ) : (
@@ -562,18 +596,35 @@ export const Sidebar: React.FC = () => {
 
         {/* Expanded Folder Contents */}
         {isExpanded && (
-          <div className="flex flex-col">
+          <div 
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.dataTransfer.dropEffect = 'move';
+              if (dragOverFolderId !== folder.id) {
+                setDragOverFolderId(folder.id);
+              }
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                setDragOverFolderId((prev) => (prev === folder.id ? null : prev));
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setDragOverFolderId(null);
+              handleFileDropFromOs(e, folder.id);
+            }}
+            className={`flex flex-col transition-colors rounded-md ${
+              isDragOver ? 'bg-blue-950/25 border-l-2 border-blue-400' : ''
+            }`}
+          >
             {childFolders.map((sub) => renderFolder(sub, depth + 1))}
             {childNotes.map((n) => renderNoteItem(n, depth + 1))}
             {childFolders.length === 0 && childNotes.length === 0 && (
               <Tooltip content="Klik kanan atau seret file ke sini untuk menambah file" position="top">
                 <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setDragOverFolderId(folder.id);
-                  }}
-                  onDragLeave={() => setDragOverFolderId(null)}
-                  onDrop={(e) => handleFileDropFromOs(e, folder.id)}
                   onContextMenu={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -587,7 +638,7 @@ export const Sidebar: React.FC = () => {
                   }}
                   style={{ paddingLeft: `${(depth + 1) * 14 + 16}px` }}
                   className={`py-1 text-[11px] italic cursor-pointer transition-colors ${
-                    dragOverFolderId === folder.id
+                    isDragOver
                       ? 'text-blue-300 bg-blue-950/40 rounded'
                       : 'text-slate-400 hover:text-slate-300'
                   }`}
@@ -820,10 +871,21 @@ export const Sidebar: React.FC = () => {
         }}
         onDragOver={(e) => {
           e.preventDefault();
-          setDragOverFolderId('root');
+          if (e.target === e.currentTarget) {
+            setDragOverFolderId('root');
+          }
         }}
-        onDragLeave={() => setDragOverFolderId(null)}
-        onDrop={(e) => handleFileDropFromOs(e, null)}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setDragOverFolderId((prev) => (prev === 'root' ? null : prev));
+          }
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setDragOverFolderId(null);
+          handleFileDropFromOs(e, null);
+        }}
         className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5 custom-scroll"
       >
         <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 px-2 py-1.5 uppercase tracking-wider">

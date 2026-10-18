@@ -507,9 +507,25 @@ export const useNoteStore = create<NoteState>((set, get) => {
           }
           return n;
         });
+
+        // If moved into a folder, ensure the target folder is expanded so user sees the moved note
+        let expandedFolderIds = state.expandedFolderIds;
+        if (folderId && !expandedFolderIds.includes(folderId)) {
+          expandedFolderIds = [...expandedFolderIds, folderId];
+          saveExpandedFolders(state.currentUser?.uid, expandedFolderIds);
+        }
+
         localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
-        return { notes };
+        return { notes, expandedFolderIds };
       });
+
+      broadcastChannel?.postMessage({ type: 'NOTES_UPDATED', payload: get().notes });
+      if (folderId) {
+        broadcastChannel?.postMessage({
+          type: 'EXPANDED_FOLDERS_UPDATED',
+          payload: get().expandedFolderIds,
+        });
+      }
 
       if (get().currentUser) {
         updatedNotes.forEach((n) => syncNoteToFirestore(n).catch(console.error));

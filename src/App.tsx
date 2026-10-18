@@ -236,22 +236,6 @@ export const App: React.FC = () => {
     <div 
       className="flex flex-col h-screen w-screen bg-[#0b0d13] text-slate-100 overflow-hidden font-sans relative"
     >
-      {/* Drop Files Overlay - pointer-events-none ensures Sidebar and editor remain accessible */}
-      {isDraggingOverApp && (
-        <div 
-          className="absolute inset-0 z-50 bg-[#0b0d13]/85 backdrop-blur-[2px] flex flex-col items-center justify-center border-2 border-dashed border-blue-500 m-3 rounded-lg pointer-events-none animate-in fade-in duration-75"
-        >
-          <div className="bg-[#121620] border border-[#222a3a] px-6 py-5 rounded-lg flex flex-col items-center text-center shadow-2xl max-w-sm">
-            <div className="w-10 h-10 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center mb-3">
-              <Upload className="w-5 h-5" />
-            </div>
-            <h3 className="text-sm font-semibold text-white mb-1">Lepaskan File untuk Impor</h3>
-            <p className="text-xs text-slate-300">
-              Lepaskan di sini untuk membuat catatan baru di workspace, atau arahkan ke folder di sidebar.
-            </p>
-          </div>
-        </div>
-      )}
       {/* Top Header & TabBar */}
       <Header onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)} />
 
@@ -261,7 +245,23 @@ export const App: React.FC = () => {
         <Sidebar />
 
         {/* Center / Right Editor & Preview Area */}
-        <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-[#0e1118]">
+        <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-[#0e1118] relative">
+          {/* Drop Files Overlay - covers only the editor/preview workspace so Sidebar is always clear */}
+          {isDraggingOverApp && (
+            <div 
+              className="absolute inset-0 z-50 bg-[#0b0d13]/85 backdrop-blur-[2px] flex flex-col items-center justify-center border-2 border-dashed border-blue-500 m-3 rounded-lg pointer-events-none animate-in fade-in duration-75"
+            >
+              <div className="bg-[#121620] border border-[#222a3a] px-6 py-5 rounded-lg flex flex-col items-center text-center shadow-2xl max-w-sm">
+                <div className="w-10 h-10 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center mb-3">
+                  <Upload className="w-5 h-5" />
+                </div>
+                <h3 className="text-sm font-semibold text-white mb-1">Lepaskan File untuk Impor</h3>
+                <p className="text-xs text-slate-300">
+                  Lepaskan di sini untuk membuat catatan baru di workspace, atau arahkan ke folder di sidebar.
+                </p>
+              </div>
+            </div>
+          )}
           {/* Editor Formatting Toolbar (visible in Split & Editor modes) */}
           {viewMode !== 'preview' && (
             <EditorToolbar onInsert={handleToolbarInsert} />
