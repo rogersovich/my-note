@@ -451,9 +451,22 @@ export const Sidebar: React.FC = () => {
 
   // Render Folder Tree Item
   const renderFolder = (folder: Folder, depth: number = 0) => {
-    const isExpanded = expandedFolderIds.includes(folder.id);
+    const isSearching = searchQuery.trim() !== '';
     const childNotes = filteredNotes.filter((n) => n.folderId === folder.id);
     const childFolders = folders.filter((f) => f.parentId === folder.id);
+
+    // During search, check if this folder or any of its descendants has matching notes
+    const hasMatchingDescendant = (fId: string): boolean => {
+      if (filteredNotes.some((n) => n.folderId === fId)) return true;
+      const subs = folders.filter((sub) => sub.parentId === fId);
+      return subs.some((sub) => hasMatchingDescendant(sub.id));
+    };
+
+    if (isSearching && !hasMatchingDescendant(folder.id)) {
+      return null;
+    }
+
+    const isExpanded = isSearching ? true : expandedFolderIds.includes(folder.id);
     const isEditing = editingFolderId === folder.id;
     const isDragOver = dragOverFolderId === folder.id;
 

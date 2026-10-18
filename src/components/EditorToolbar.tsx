@@ -19,14 +19,20 @@ import {
   Minus
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
+import { useNoteStore } from '../store/useNoteStore';
 
 interface EditorToolbarProps {
   onInsert: (syntax: string) => void;
 }
 
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({ onInsert }) => {
+  const { activeNoteId } = useNoteStore();
+  const isDisabled = !activeNoteId;
+
   return (
-    <div className="flex items-center gap-0.5 px-3 h-9 bg-[#0e1118] border-b border-[#1e2636] overflow-x-auto no-scrollbar select-none text-slate-300">
+    <div className={`flex items-center gap-0.5 px-3 h-9 bg-[#0e1118] border-b border-[#1e2636] overflow-x-auto no-scrollbar select-none text-slate-300 transition-opacity ${
+      isDisabled ? 'opacity-40 pointer-events-none' : ''
+    }`}>
       {/* Headings */}
       <Tooltip content="Heading 1" shortcut="#" position="bottom">
         <button

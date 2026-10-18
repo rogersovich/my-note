@@ -585,13 +585,38 @@ export const useNoteStore = create<NoteState>((set, get) => {
     },
 
     deleteFolder: (id) => {
+      // Collect target folder ID and all its descendants recursively
+      const allFolders = get().folders;
+      const toDeleteFolderIds = new Set<string>([id]);
+      let addedMore = true;
+      while (addedMore) {
+        addedMore = false;
+        allFolders.forEach((f) => {
+          if (f.parentId && toDeleteFolderIds.has(f.parentId) && !toDeleteFolderIds.has(f.id)) {
+            toDeleteFolderIds.add(f.id);
+            addedMore = true;
+          }
+        });
+      }
+
+      const movedNotes: Note[] = [];
+
       set((state) => {
-        // Move notes inside this folder to root or keep them
-        const notes = state.notes.map((n) =>
-          n.folderId === id ? { ...n, folderId: null } : n
+        // Move notes inside any of the deleted folders to root (null)
+        const notes = state.notes.map((n) => {
+          if (n.folderId && toDeleteFolderIds.has(n.folderId)) {
+            const updated = { ...n, folderId: null, updatedAt: Date.now() };
+            movedNotes.push(updated);
+            return updated;
+          }
+          return n;
+        });
+
+        const folders = state.folders.filter((f) => !toDeleteFolderIds.has(f.id));
+        const expandedFolderIds = state.expandedFolderIds.filter(
+          (fid) => !toDeleteFolderIds.has(fid)
         );
-        const folders = state.folders.filter((f) => f.id !== id && f.parentId !== id);
-        const expandedFolderIds = state.expandedFolderIds.filter((fid) => fid !== id);
+
         localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
         localStorage.setItem(STORAGE_FOLDERS, JSON.stringify(folders));
         saveExpandedFolders(state.currentUser?.uid, expandedFolderIds);
@@ -599,13 +624,15 @@ export const useNoteStore = create<NoteState>((set, get) => {
       });
 
       broadcastChannel?.postMessage({ type: 'FOLDER_UPDATED', payload: get().folders });
+      broadcastChannel?.postMessage({ type: 'NOTES_UPDATED', payload: get().notes });
       broadcastChannel?.postMessage({
         type: 'EXPANDED_FOLDERS_UPDATED',
         payload: get().expandedFolderIds,
       });
 
       if (get().currentUser) {
-        deleteFolderFromFirestore(id);
+        toDeleteFolderIds.forEach((fId) => deleteFolderFromFirestore(fId));
+        movedNotes.forEach((n) => syncNoteToFirestore(n).catch(console.error));
       }
     },
 

@@ -46,6 +46,75 @@ function extractFrontmatter(content: string): { frontmatter: Record<string, any>
   return { frontmatter: metadata, markdown: remainingMarkdown };
 }
 
+// Custom code block with Copy button & language tag
+const PreBlock: React.FC<React.HTMLAttributes<HTMLPreElement>> = ({ children, ...props }) => (
+  <div className="relative group my-4 rounded-lg overflow-hidden border border-[#1e2636] bg-[#0b0d13]">
+    <pre {...props} className="m-0 p-4 overflow-x-auto text-sm">
+      {children}
+    </pre>
+  </div>
+);
+
+const CodeBlock = ({ className, children, ...props }: any) => {
+  const match = /language-(\w+)/.exec(className || '');
+  const isInline = !match && !String(children).includes('\n');
+  const [copied, setCopied] = useState(false);
+
+  if (isInline) {
+    return (
+      <code className="px-1.5 py-0.5 rounded text-xs bg-[#161c28] text-sky-300 border border-[#2b3548] font-mono" {...props}>
+        {children}
+      </code>
+    );
+  }
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative">
+      <div className="absolute -top-3 right-0 flex items-center gap-1.5 z-10">
+        {match && (
+          <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#161c28] text-slate-300 border border-[#263042]">
+            {match[1]}
+          </span>
+        )}
+        <Tooltip content={copied ? 'Tersalin!' : 'Salin Kode'} position="top">
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#161c28] hover:bg-[#1f2738] text-[11px] text-slate-200 border border-[#263042] transition-colors"
+            aria-label="Salin kode"
+          >
+            {copied ? (
+              <>
+                <Check className="w-3 h-3 text-emerald-400" />
+                <span className="text-emerald-400">Copied</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3 h-3 text-slate-400" />
+                <span>Copy</span>
+              </>
+            )}
+          </button>
+        </Tooltip>
+      </div>
+      <code className={className} {...props}>
+        {children}
+      </code>
+    </div>
+  );
+};
+
+const markdownComponents = {
+  pre: PreBlock,
+  code: CodeBlock,
+};
+
 export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreviewProps>(
   ({ onScrollPercentage }, ref) => {
     const { activeNoteId, notes, syncScrollEnabled, fontSize } = useNoteStore();
@@ -128,72 +197,7 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}
             rehypePlugins={[rehypeKatex, rehypeHighlight]}
-            components={{
-              // Custom code block with Copy button & language tag
-              pre: ({ children, ...props }) => {
-                return (
-                  <div className="relative group my-4 rounded-lg overflow-hidden border border-[#1e2636] bg-[#0b0d13]">
-                    <pre {...props} className="m-0 p-4 overflow-x-auto text-sm">
-                      {children}
-                    </pre>
-                  </div>
-                );
-              },
-              code: ({ className, children, ...props }: any) => {
-                const match = /language-(\w+)/.exec(className || '');
-                const isInline = !match && !String(children).includes('\n');
-                const [copied, setCopied] = useState(false);
-
-                if (isInline) {
-                  return (
-                    <code className="px-1.5 py-0.5 rounded text-xs bg-[#161c28] text-sky-300 border border-[#2b3548] font-mono" {...props}>
-                      {children}
-                    </code>
-                  );
-                }
-
-                const handleCopy = () => {
-                  navigator.clipboard.writeText(String(children).replace(/\n$/, ''));
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 2000);
-                };
-
-                return (
-                  <div className="relative">
-                    <div className="absolute -top-3 right-0 flex items-center gap-1.5 z-10">
-                      {match && (
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#161c28] text-slate-300 border border-[#263042]">
-                          {match[1]}
-                        </span>
-                      )}
-                      <Tooltip content={copied ? 'Tersalin!' : 'Salin Kode'} position="top">
-                        <button
-                          type="button"
-                          onClick={handleCopy}
-                          className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#161c28] hover:bg-[#1f2738] text-[11px] text-slate-200 border border-[#263042] transition-colors"
-                          aria-label="Salin kode"
-                        >
-                          {copied ? (
-                            <>
-                              <Check className="w-3 h-3 text-emerald-400" />
-                              <span className="text-emerald-400">Copied</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3 h-3 text-slate-400" />
-                              <span>Copy</span>
-                            </>
-                          )}
-                        </button>
-                      </Tooltip>
-                    </div>
-                    <code className={className} {...props}>
-                      {children}
-                    </code>
-                  </div>
-                );
-              },
-            }}
+            components={markdownComponents}
           >
             {cleanMarkdown}
           </ReactMarkdown>

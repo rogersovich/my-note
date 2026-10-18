@@ -11,7 +11,14 @@ export const TabBar: React.FC = () => {
     .filter((n): n is NonNullable<typeof n> => !!n);
 
   return (
-    <div className="flex items-center h-10 bg-[#0e1118] border-b border-[#1e2636] overflow-x-auto no-scrollbar select-none">
+    <div 
+      onWheel={(e) => {
+        if (e.deltaY !== 0) {
+          e.currentTarget.scrollLeft += e.deltaY;
+        }
+      }}
+      className="flex items-center h-10 bg-[#0e1118] border-b border-[#1e2636] overflow-x-auto no-scrollbar select-none"
+    >
       <div className="flex items-center h-full">
         {openNotes.map((note) => {
           const isActive = note.id === activeNoteId;

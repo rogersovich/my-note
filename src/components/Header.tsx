@@ -61,25 +61,35 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
 
   const handleExportHtml = () => {
     if (!activeNote) return;
+    const previewEl = document.querySelector('.markdown-preview');
+    const renderedHtml = previewEl ? previewEl.innerHTML : `<pre>${activeNote.content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
+
     const htmlContent = `<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${activeNote.title}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1e293b; }
-    h1, h2, h3 { color: #0f172a; }
-    pre { background: #f1f5f9; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: monospace; }
-    code { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 85%; }
-    blockquote { border-left: 4px solid #3b82f6; margin-left: 0; padding-left: 16px; color: #64748b; font-style: italic; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 820px; margin: 40px auto; padding: 0 24px; line-height: 1.7; color: #1e293b; background: #fff; }
+    h1, h2, h3, h4 { color: #0f172a; margin-top: 1.5em; margin-bottom: 0.5em; }
+    h1 { border-bottom: 1px solid #e2e8f0; padding-bottom: 0.3em; }
+    pre { background: #0f172a; color: #f8fafc; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 13px; }
+    code:not(pre code) { background: #f1f5f9; color: #e11d48; padding: 2px 6px; border-radius: 4px; font-size: 85%; }
+    blockquote { border-left: 4px solid #3b82f6; margin: 1.2em 0; padding: 8px 16px; color: #475569; background: #f8fafc; border-radius: 0 6px 6px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
     th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
-    th { background: #f8fafc; }
+    th { background: #f1f5f9; font-weight: 600; }
+    tr:nth-child(even) { background: #f8fafc; }
+    a { color: #2563eb; }
+    img { max-width: 100%; border-radius: 6px; }
+    button { display: none !important; }
   </style>
 </head>
 <body>
-  <div id="content">
-    <pre>${activeNote.content.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+  <div class="markdown-body">
+    ${renderedHtml}
   </div>
 </body>
 </html>`;
