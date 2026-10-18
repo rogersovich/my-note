@@ -1,4 +1,4 @@
-import { useRef, useImperativeHandle, forwardRef, useState } from 'react';
+import { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -119,11 +119,68 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
   ({ onScrollPercentage }, ref) => {
     const { activeNoteId, notes, syncScrollEnabled, fontSize } = useNoteStore();
     const containerRef = useRef<HTMLDivElement>(null);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [copiedType, setCopiedType] = useState<'text' | 'md' | null>(null);
 
     const activeNote = notes.find((n) => n.id === activeNoteId);
     const rawContent = activeNote ? activeNote.content : '';
 
     const { frontmatter, markdown: cleanMarkdown } = extractFrontmatter(rawContent);
+
+    // Dedicated Ctrl+A handler: Selects ONLY the preview contents when focus/cursor is in preview
+    useEffect(() => {
+      const handleGlobalKeyDown = (e: KeyboardEvent) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+          const activeEl = document.activeElement;
+
+          // Never override if user is typing in CodeMirror editor or input/textarea
+          if (
+            activeEl &&
+            (activeEl.tagName === 'INPUT' ||
+              activeEl.tagName === 'TEXTAREA' ||
+              activeEl.closest('.cm-editor') ||
+              activeEl.getAttribute('contenteditable') === 'true')
+          ) {
+            return;
+          }
+
+          // Check if focus or cursor is inside preview container
+          const isInsidePreview =
+            containerRef.current &&
+            (containerRef.current.contains(activeEl) || containerRef.current.matches(':hover'));
+
+          if (isInsidePreview) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const selection = window.getSelection();
+            if (selection && contentRef.current) {
+              selection.removeAllRanges();
+              const range = document.createRange();
+              range.selectNodeContents(contentRef.current);
+              selection.addRange(range);
+            }
+          }
+        }
+      };
+
+      window.addEventListener('keydown', handleGlobalKeyDown, true);
+      return () => window.removeEventListener('keydown', handleGlobalKeyDown, true);
+    }, []);
+
+    const handleCopyPlainText = () => {
+      if (!contentRef.current) return;
+      const text = contentRef.current.innerText;
+      navigator.clipboard.writeText(text);
+      setCopiedType('text');
+      setTimeout(() => setCopiedType(null), 2000);
+    };
+
+    const handleCopyMarkdown = () => {
+      navigator.clipboard.writeText(cleanMarkdown || rawContent);
+      setCopiedType('md');
+      setTimeout(() => setCopiedType(null), 2000);
+    };
 
     useImperativeHandle(ref, () => ({
       scrollToPercentage: (percentage: number) => {
@@ -153,10 +210,56 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
     return (
       <div
         ref={containerRef}
+        tabIndex={0}
         onScroll={handleScroll}
-        className="flex-1 h-full overflow-y-auto p-6 md:p-8 bg-[#0e1118] custom-scroll select-text"
+        className="flex-1 h-full overflow-y-auto p-6 md:p-8 bg-[#0e1118] custom-scroll select-text outline-none focus:outline-none relative"
       >
+        {/* Top-Right Floating Copy Bar */}
+        <div className="sticky top-0 z-20 flex justify-end -mt-2 mb-4 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-1 bg-[#121622]/95 backdrop-blur-md border border-[#232b3c] p-1 rounded-lg shadow-xl text-xs select-none">
+            <Tooltip content="Salin teks narasi bersih (tanpa simbol markdown)" position="bottom">
+              <button
+                type="button"
+                onClick={handleCopyPlainText}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#171d2b] hover:bg-[#20293d] text-slate-200 hover:text-white transition-colors font-medium border border-[#2b3548]"
+                aria-label="Salin Teks"
+              >
+                {copiedType === 'text' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400 font-medium">Tersalin!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Salin Teks</span>
+                  </>
+                )}
+              </button>
+            </Tooltip>
+
+            <Tooltip content="Salin format Markdown asli (.md)" position="bottom">
+              <button
+                type="button"
+                onClick={handleCopyMarkdown}
+                className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#1a2233] text-slate-300 hover:text-white transition-colors"
+                aria-label="Salin Markdown"
+              >
+                {copiedType === 'md' ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-400 font-mono text-[11px]">MD</span>
+                  </>
+                ) : (
+                  <span className="font-mono text-[11px] font-semibold text-slate-300">MD</span>
+                )}
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+
         <div 
+          ref={contentRef}
           className="max-w-3xl mx-auto markdown-preview"
           style={{ fontSize: `${fontSize + 1}px` }}
         >
