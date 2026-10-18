@@ -128,7 +128,14 @@ export const FirebaseModal: React.FC<FirebaseModalProps> = ({ isOpen, onClose })
       }
     } catch (err: any) {
       console.error(err);
-      setStatusMsg({ text: err.message || 'Gagal login dengan Google', type: 'error' });
+      if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('unauthorized-domain'))) {
+        setStatusMsg({
+          text: `Domain "${window.location.hostname}" belum diizinkan oleh Firebase. Silakan tambahkan domain ini ke Authorized Domains di Firebase Console.`,
+          type: 'error',
+        });
+      } else {
+        setStatusMsg({ text: err.message || 'Gagal login dengan Google', type: 'error' });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -220,7 +227,7 @@ service cloud.firestore {
           {/* Status Message */}
           {statusMsg && (
             <div
-              className={`p-3 rounded-lg flex items-center gap-2 ${
+              className={`p-3 rounded-lg flex flex-col gap-2 ${
                 statusMsg.type === 'success'
                   ? 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-300'
                   : statusMsg.type === 'error'
@@ -228,12 +235,41 @@ service cloud.firestore {
                   : 'bg-blue-500/10 border border-blue-500/30 text-blue-300'
               }`}
             >
-              {statusMsg.type === 'success' ? (
-                <CheckCircle className="w-4 h-4 shrink-0" />
-              ) : (
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div className="flex items-start gap-2">
+                {statusMsg.type === 'success' ? (
+                  <CheckCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                )}
+                <span className="leading-relaxed">{statusMsg.text}</span>
+              </div>
+
+              {statusMsg.type === 'error' && statusMsg.text.includes('Authorized Domains') && (
+                <div className="flex flex-wrap items-center gap-2 pt-1 pl-6">
+                  <a
+                    href={`https://console.firebase.google.com/project/${projectId || 'my-note-e9de9'}/authentication/settings`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs transition-colors"
+                  >
+                    <span>Buka Firebase Console</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.hostname);
+                      setStatusMsg({
+                        text: `Domain "${window.location.hostname}" berhasil disalin! Tambahkan ke Firebase Console > Authentication > Settings > Authorized domains.`,
+                        type: 'info',
+                      });
+                    }}
+                    className="px-2.5 py-1 rounded bg-[#161c28] hover:bg-[#1e2738] border border-[#2b3548] text-slate-200 text-xs transition-colors"
+                  >
+                    Salin Domain ({window.location.hostname})
+                  </button>
+                </div>
               )}
-              <span>{statusMsg.text}</span>
             </div>
           )}
 
