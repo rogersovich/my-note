@@ -450,8 +450,20 @@ export const Sidebar: React.FC = () => {
             {childNotes.map((n) => renderNoteItem(n, depth + 1))}
             {childFolders.length === 0 && childNotes.length === 0 && (
               <div
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setContextMenu({
+                    isOpen: true,
+                    x: e.clientX,
+                    y: e.clientY,
+                    type: 'folder',
+                    targetId: folder.id,
+                  });
+                }}
                 style={{ paddingLeft: `${(depth + 1) * 14 + 16}px` }}
-                className="py-1 text-[11px] text-slate-400 italic"
+                className="py-1 text-[11px] text-slate-400 italic cursor-pointer hover:text-slate-300 transition-colors"
+                title="Klik kanan untuk menambah file di folder ini"
               >
                 Empty folder (drag files here)
               </div>
@@ -467,7 +479,20 @@ export const Sidebar: React.FC = () => {
   const rootNotes = filteredNotes.filter((n) => n.folderId === null);
 
   return (
-    <aside className="w-64 sm:w-72 bg-[#0e1118] border-r border-[#1e2636] flex flex-col h-full shrink-0 select-none z-20">
+    <aside 
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setContextMenu({
+          isOpen: true,
+          x: e.clientX,
+          y: e.clientY,
+          type: 'empty',
+          targetId: null,
+        });
+      }}
+      className="w-64 sm:w-72 bg-[#0e1118] border-r border-[#1e2636] flex flex-col h-full shrink-0 select-none z-20"
+    >
       {/* Hidden File Input for uploading from disk */}
       <input
         ref={fileInputRef}
@@ -653,6 +678,7 @@ export const Sidebar: React.FC = () => {
       <div
         onContextMenu={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           setContextMenu({
             isOpen: true,
             x: e.clientX,
@@ -692,6 +718,7 @@ export const Sidebar: React.FC = () => {
       <div
         onContextMenu={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           setContextMenu({
             isOpen: true,
             x: e.clientX,
@@ -879,7 +906,7 @@ export const Sidebar: React.FC = () => {
           {contextMenu.type === 'empty' && (
             <div className="flex flex-col">
               <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 border-b border-[#1e2636]">
-                Explorer Actions
+                Root Explorer (Di Luar Folder)
               </div>
 
               <button
@@ -892,7 +919,7 @@ export const Sidebar: React.FC = () => {
                 className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
               >
                 <FilePlus className="w-3.5 h-3.5 text-blue-400" />
-                <span>File Baru</span>
+                <span>File Baru di Root</span>
               </button>
 
               <button
@@ -905,7 +932,7 @@ export const Sidebar: React.FC = () => {
                 className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
               >
                 <FolderPlus className="w-3.5 h-3.5 text-amber-400" />
-                <span>Folder Baru</span>
+                <span>Folder Baru di Root</span>
               </button>
 
               <div className="h-[1px] bg-[#1e2636] my-1" />
