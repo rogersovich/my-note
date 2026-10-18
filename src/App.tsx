@@ -112,80 +112,16 @@ export const App: React.FC = () => {
 
   const [isDraggingOverApp, setIsDraggingOverApp] = useState(false);
   const dragCounter = useRef(0);
-  const isDroppingRef = useRef(false);
 
   const resetDragState = useCallback(() => {
     dragCounter.current = 0;
     setIsDraggingOverApp(false);
   }, []);
 
-  useEffect(() => {
-    const handleWindowDragEnter = (e: DragEvent) => {
-      if (isDroppingRef.current) return;
-      if (!e.dataTransfer?.types) return;
-      const types = Array.from(e.dataTransfer.types);
-      // Only react to OS files, ignore internal note dragging
-      if (!types.includes('Files') || types.includes('application/json-mynote-ids')) {
-        return;
-      }
-      dragCounter.current += 1;
-      setIsDraggingOverApp(true);
-    };
-
-    const handleWindowDragLeave = (e: DragEvent) => {
-      dragCounter.current -= 1;
-      // If leaving the window entirely
-      if (dragCounter.current <= 0 || !e.relatedTarget || (e.clientX === 0 && e.clientY === 0)) {
-        resetDragState();
-      }
-    };
-
-    const handleWindowDrop = () => {
-      isDroppingRef.current = true;
-      resetDragState();
-      setTimeout(() => {
-        isDroppingRef.current = false;
-      }, 300);
-    };
-
-    const handleWindowDragEnd = () => {
-      resetDragState();
-    };
-
-    const handleWindowMouseUp = () => {
-      resetDragState();
-    };
-
-    window.addEventListener('dragenter', handleWindowDragEnter);
-    window.addEventListener('dragleave', handleWindowDragLeave);
-    window.addEventListener('drop', handleWindowDrop, true); // capture phase catches all drops
-    window.addEventListener('dragend', handleWindowDragEnd);
-    window.addEventListener('mouseup', handleWindowMouseUp);
-
-    return () => {
-      window.removeEventListener('dragenter', handleWindowDragEnter);
-      window.removeEventListener('dragleave', handleWindowDragLeave);
-      window.removeEventListener('drop', handleWindowDrop, true);
-      window.removeEventListener('dragend', handleWindowDragEnd);
-      window.removeEventListener('mouseup', handleWindowMouseUp);
-    };
-  }, [resetDragState]);
-
-  const handleAppDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    isDroppingRef.current = true;
-    resetDragState();
-    setTimeout(() => {
-      isDroppingRef.current = false;
-    }, 300);
-
-    // If it's internal notes, let Sidebar handle it
-    if (e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('application/json-mynote-ids')) {
-      return;
-    }
-
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const fileList = Array.from(e.dataTransfer.files);
+  const handleFileImport = useCallback(
+    async (files: FileList | File[], folderId: string | null = null) => {
+      if (!files || files.length === 0) return;
+      const fileList = Array.from(files);
       const parsedFiles = await Promise.all(
         fileList.map(async (file) => {
           try {
@@ -198,45 +134,121 @@ export const App: React.FC = () => {
         })
       );
 
-      const validFiles = parsedFiles.filter((f): f is { title: string; content: string } => f !== null);
+      const validFiles = parsedFiles.filter(
+        (f): f is { title: string; content: string } => f !== null
+      );
       if (validFiles.length > 0) {
-        createMultipleNotes(validFiles, null);
+        createMultipleNotes(validFiles, folderId);
       }
-    }
-  };
+    },
+    [createMultipleNotes]
+  );
+
+  useEffect(() => {
+    // 1. MUST preventDefault on window dragover so browser never opens the file in a new tab
+    const handleWindowDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'copy';
+      }
+    };
+
+    const handleWindowDragEnter = (e: DragEvent) => {
+      e.preventDefault();
+      if (!e.dataTransfer?.types) return;
+      const types = Array.from(e.dataTransfer.types);
+      // Only react to OS files, ignore internal note dragging
+      if (!types.includes('Files') || types.includes('application/json-mynote-ids')) {
+        return;
+      }
+      dragCounter.current += 1;
+      setIsDraggingOverApp(true);
+    };
+
+    const handleWindowDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      dragCounter.current -= 1;
+      // If leaving the window entirely
+      if (dragCounter.current <= 0 || !e.relatedTarget || (e.clientX === 0 && e.clientY === 0)) {
+        resetDragState();
+      }
+    };
+
+    // Capture phase drop: ALWAYS prevent browser default navigation immediately and reset UI
+    const handleCaptureDrop = (e: DragEvent) => {
+      e.preventDefault();
+      resetDragState();
+    };
+
+    // Bubble phase drop: if drop was not consumed by Sidebar (stopPropagation), import into root workspace
+    const handleBubbleDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      resetDragState();
+
+      if (
+        e.dataTransfer?.types &&
+        Array.from(e.dataTransfer.types).includes('application/json-mynote-ids')
+      ) {
+        return;
+      }
+
+      if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+        await handleFileImport(e.dataTransfer.files, null);
+      }
+    };
+
+    const handleWindowDragEnd = () => {
+      resetDragState();
+    };
+
+    const handleWindowMouseUp = () => {
+      resetDragState();
+    };
+
+    const handleWindowKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        resetDragState();
+      }
+    };
+
+    window.addEventListener('dragover', handleWindowDragOver, false);
+    window.addEventListener('dragenter', handleWindowDragEnter, false);
+    window.addEventListener('dragleave', handleWindowDragLeave, false);
+    window.addEventListener('drop', handleCaptureDrop, true); // capture: guarantees browser never opens file
+    window.addEventListener('drop', handleBubbleDrop, false); // bubble: handles root note creation
+    window.addEventListener('dragend', handleWindowDragEnd, false);
+    window.addEventListener('mouseup', handleWindowMouseUp, false);
+    window.addEventListener('keydown', handleWindowKeyDown, false);
+
+    return () => {
+      window.removeEventListener('dragover', handleWindowDragOver, false);
+      window.removeEventListener('dragenter', handleWindowDragEnter, false);
+      window.removeEventListener('dragleave', handleWindowDragLeave, false);
+      window.removeEventListener('drop', handleCaptureDrop, true);
+      window.removeEventListener('drop', handleBubbleDrop, false);
+      window.removeEventListener('dragend', handleWindowDragEnd, false);
+      window.removeEventListener('mouseup', handleWindowMouseUp, false);
+      window.removeEventListener('keydown', handleWindowKeyDown, false);
+    };
+  }, [resetDragState, handleFileImport]);
 
   return (
     <div 
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={handleAppDrop}
       className="flex flex-col h-screen w-screen bg-[#0b0d13] text-slate-100 overflow-hidden font-sans relative"
     >
-      {/* Drop Files Overlay */}
+      {/* Drop Files Overlay - pointer-events-none ensures Sidebar and editor remain accessible */}
       {isDraggingOverApp && (
         <div 
-          onClick={resetDragState}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleAppDrop}
-          className="absolute inset-0 z-50 bg-[#0b0d13]/85 flex flex-col items-center justify-center border-2 border-dashed border-blue-500 m-3 rounded-lg cursor-pointer animate-in fade-in duration-75"
+          className="absolute inset-0 z-50 bg-[#0b0d13]/85 backdrop-blur-[2px] flex flex-col items-center justify-center border-2 border-dashed border-blue-500 m-3 rounded-lg pointer-events-none animate-in fade-in duration-75"
         >
-          <div 
-            className="bg-[#121620] border border-[#222a3a] px-6 py-5 rounded-lg flex flex-col items-center text-center shadow-2xl max-w-sm pointer-events-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="bg-[#121620] border border-[#222a3a] px-6 py-5 rounded-lg flex flex-col items-center text-center shadow-2xl max-w-sm">
             <div className="w-10 h-10 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center mb-3">
               <Upload className="w-5 h-5" />
             </div>
             <h3 className="text-sm font-semibold text-white mb-1">Lepaskan File untuk Impor</h3>
-            <p className="text-xs text-slate-300 mb-3">
-              File .md atau .txt akan ditambahkan otomatis ke workspace catatan Anda.
+            <p className="text-xs text-slate-300">
+              Lepaskan di sini untuk membuat catatan baru di workspace, atau arahkan ke folder di sidebar.
             </p>
-            <button
-              type="button"
-              onClick={resetDragState}
-              className="px-3 py-1 rounded bg-[#182030] hover:bg-[#202a40] text-slate-300 hover:text-white text-xs border border-[#28354c] transition-colors"
-            >
-              Tutup / Batal
-            </button>
           </div>
         </div>
       )}
