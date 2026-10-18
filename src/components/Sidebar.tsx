@@ -18,8 +18,11 @@ import {
   Copy
 } from 'lucide-react';
 import type { Folder, Note } from '../types';
+import { useConfirmStore } from '../store/useConfirmStore';
+import { Tooltip } from './Tooltip';
 
 export const Sidebar: React.FC = () => {
+  const { confirm: confirmAction } = useConfirmStore();
   const {
     notes,
     folders,
@@ -373,46 +376,53 @@ export const Sidebar: React.FC = () => {
 
         {/* Action icons on hover */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleFavorite(note.id);
-            }}
-            className={`p-1 rounded hover:bg-[#1e2738] ${
-              note.isFavorite ? 'text-amber-400 opacity-100' : 'text-slate-400 hover:text-amber-400'
-            }`}
-            title={note.isFavorite ? 'Favorited' : 'Favorite'}
-          >
-            <Star className={`w-3 h-3 ${note.isFavorite ? 'fill-amber-400' : ''}`} />
-          </button>
+          <Tooltip content={note.isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'} position="top">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(note.id);
+              }}
+              className={`p-1 rounded hover:bg-[#1e2738] ${
+                note.isFavorite ? 'text-amber-400 opacity-100' : 'text-slate-400 hover:text-amber-400'
+              }`}
+            >
+              <Star className={`w-3 h-3 ${note.isFavorite ? 'fill-amber-400' : ''}`} />
+            </button>
+          </Tooltip>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setEditingNoteId(note.id);
-              setEditingNoteTitle(note.title);
-            }}
-            className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-slate-100"
-            title="Rename"
-          >
-            <Edit3 className="w-3 h-3" />
-          </button>
+          <Tooltip content="Ubah Nama" position="top">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingNoteId(note.id);
+                setEditingNoteTitle(note.title);
+              }}
+              className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-slate-100"
+            >
+              <Edit3 className="w-3 h-3" />
+            </button>
+          </Tooltip>
 
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (confirm(`Hapus catatan "${note.title}"?`)) {
-                deleteNote(note.id);
-              }
-            }}
-            className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-rose-400"
-            title="Delete"
-          >
-            <Trash2 className="w-3 h-3" />
-          </button>
+          <Tooltip content="Hapus Catatan" position="top">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                confirmAction({
+                  title: 'Hapus Catatan',
+                  message: `Apakah Anda yakin ingin menghapus catatan "${note.title}"?`,
+                  confirmText: 'Hapus',
+                  variant: 'danger',
+                  onConfirm: () => deleteNote(note.id),
+                });
+              }}
+              className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-rose-400"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </Tooltip>
         </div>
       </div>
     );
@@ -499,46 +509,53 @@ export const Sidebar: React.FC = () => {
 
             {/* Folder Hover Actions */}
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setTargetFolderIdForNote(folder.id);
-                  setIsCreatingNote(true);
-                  if (!isExpanded) toggleFolderExpanded(folder.id);
-                }}
-                className="p-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-white"
-                title="New file in this folder"
-              >
-                <FilePlus className="w-3 h-3" />
-              </button>
+              <Tooltip content="File Baru di Folder Ini" position="top">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setTargetFolderIdForNote(folder.id);
+                    setIsCreatingNote(true);
+                    if (!isExpanded) toggleFolderExpanded(folder.id);
+                  }}
+                  className="p-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-white"
+                >
+                  <FilePlus className="w-3 h-3" />
+                </button>
+              </Tooltip>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingFolderId(folder.id);
-                  setEditingFolderName(folder.name);
-                }}
-                className="p-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-white"
-                title="Rename folder"
-              >
-                <Edit3 className="w-3 h-3" />
-              </button>
+              <Tooltip content="Ubah Nama Folder" position="top">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingFolderId(folder.id);
+                    setEditingFolderName(folder.name);
+                  }}
+                  className="p-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-white"
+                >
+                  <Edit3 className="w-3 h-3" />
+                </button>
+              </Tooltip>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (confirm(`Hapus folder "${folder.name}"? Catatan di dalamnya akan dipindah ke root.`)) {
-                    deleteFolder(folder.id);
-                  }
-                }}
-                className="p-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-rose-400"
-                title="Delete folder"
-              >
-                <Trash2 className="w-3 h-3" />
-              </button>
+              <Tooltip content="Hapus Folder" position="top">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    confirmAction({
+                      title: 'Hapus Folder',
+                      message: `Hapus folder "${folder.name}"? Catatan di dalamnya akan otomatis dipindah ke root.`,
+                      confirmText: 'Hapus Folder',
+                      variant: 'danger',
+                      onConfirm: () => deleteFolder(folder.id),
+                    });
+                  }}
+                  className="p-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-rose-400"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </Tooltip>
             </div>
           </div>
         )}
@@ -549,34 +566,35 @@ export const Sidebar: React.FC = () => {
             {childFolders.map((sub) => renderFolder(sub, depth + 1))}
             {childNotes.map((n) => renderNoteItem(n, depth + 1))}
             {childFolders.length === 0 && childNotes.length === 0 && (
-              <div
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOverFolderId(folder.id);
-                }}
-                onDragLeave={() => setDragOverFolderId(null)}
-                onDrop={(e) => handleFileDropFromOs(e, folder.id)}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setContextMenu({
-                    isOpen: true,
-                    x: e.clientX,
-                    y: e.clientY,
-                    type: 'folder',
-                    targetId: folder.id,
-                  });
-                }}
-                style={{ paddingLeft: `${(depth + 1) * 14 + 16}px` }}
-                className={`py-1 text-[11px] italic cursor-pointer transition-colors ${
-                  dragOverFolderId === folder.id
-                    ? 'text-blue-300 bg-blue-950/40 rounded'
-                    : 'text-slate-400 hover:text-slate-300'
-                }`}
-                title="Klik kanan atau seret file ke sini untuk menambah file"
-              >
-                Empty folder (drag files here)
-              </div>
+              <Tooltip content="Klik kanan atau seret file ke sini untuk menambah file" position="top">
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOverFolderId(folder.id);
+                  }}
+                  onDragLeave={() => setDragOverFolderId(null)}
+                  onDrop={(e) => handleFileDropFromOs(e, folder.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setContextMenu({
+                      isOpen: true,
+                      x: e.clientX,
+                      y: e.clientY,
+                      type: 'folder',
+                      targetId: folder.id,
+                    });
+                  }}
+                  style={{ paddingLeft: `${(depth + 1) * 14 + 16}px` }}
+                  className={`py-1 text-[11px] italic cursor-pointer transition-colors ${
+                    dragOverFolderId === folder.id
+                      ? 'text-blue-300 bg-blue-950/40 rounded'
+                      : 'text-slate-400 hover:text-slate-300'
+                  }`}
+                >
+                  Empty folder (drag files here)
+                </div>
+              </Tooltip>
             )}
           </div>
         )}
@@ -620,38 +638,41 @@ export const Sidebar: React.FC = () => {
         </span>
 
         <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => {
-              setTargetFolderIdForNote(null);
-              setIsCreatingNote(true);
-            }}
-            className="p-1.5 rounded hover:bg-[#182030] text-slate-300 hover:text-white transition-colors"
-            title="New File"
-          >
-            <FilePlus className="w-4 h-4" />
-          </button>
+          <Tooltip content="File Baru (.md)" position="bottom">
+            <button
+              type="button"
+              onClick={() => {
+                setTargetFolderIdForNote(null);
+                setIsCreatingNote(true);
+              }}
+              className="p-1.5 rounded hover:bg-[#182030] text-slate-300 hover:text-white transition-colors"
+            >
+              <FilePlus className="w-4 h-4" />
+            </button>
+          </Tooltip>
 
-          <button
-            type="button"
-            onClick={() => {
-              setFolderParentId(null);
-              setIsCreatingFolder(true);
-            }}
-            className="p-1.5 rounded hover:bg-[#182030] text-slate-300 hover:text-amber-400 transition-colors"
-            title="New Folder"
-          >
-            <FolderPlus className="w-4 h-4" />
-          </button>
+          <Tooltip content="Folder Baru" position="bottom">
+            <button
+              type="button"
+              onClick={() => {
+                setFolderParentId(null);
+                setIsCreatingFolder(true);
+              }}
+              className="p-1.5 rounded hover:bg-[#182030] text-slate-300 hover:text-amber-400 transition-colors"
+            >
+              <FolderPlus className="w-4 h-4" />
+            </button>
+          </Tooltip>
 
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="p-1.5 rounded hover:bg-[#182030] text-slate-300 hover:text-blue-400 transition-colors"
-            title="Upload Files (.md, .txt)"
-          >
-            <Upload className="w-4 h-4" />
-          </button>
+          <Tooltip content="Upload File (.md, .txt)" position="bottom">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-1.5 rounded hover:bg-[#182030] text-slate-300 hover:text-blue-400 transition-colors"
+            >
+              <Upload className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 
@@ -897,10 +918,16 @@ export const Sidebar: React.FC = () => {
                     type="button"
                     onClick={() => {
                       setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                      if (confirm(`Hapus ${selectedNoteIds.length} catatan terpilih?`)) {
-                        selectedNoteIds.forEach((id) => deleteNote(id));
-                        setSelectedNoteIds([]);
-                      }
+                      confirmAction({
+                        title: 'Hapus Catatan Terpilih',
+                        message: `Apakah Anda yakin ingin menghapus ${selectedNoteIds.length} catatan terpilih? Tindakan ini tidak dapat dibatalkan.`,
+                        confirmText: `Hapus ${selectedNoteIds.length} Catatan`,
+                        variant: 'danger',
+                        onConfirm: () => {
+                          selectedNoteIds.forEach((id) => deleteNote(id));
+                          setSelectedNoteIds([]);
+                        },
+                      });
                     }}
                     className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors"
                   >
@@ -979,9 +1006,13 @@ export const Sidebar: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                    if (confirm(`Hapus catatan "${currentNote.title}"?`)) {
-                      deleteNote(currentNote.id);
-                    }
+                    confirmAction({
+                      title: 'Hapus Catatan',
+                      message: `Apakah Anda yakin ingin menghapus catatan "${currentNote.title}"?`,
+                      confirmText: 'Hapus',
+                      variant: 'danger',
+                      onConfirm: () => deleteNote(currentNote.id),
+                    });
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors"
                 >
@@ -1053,9 +1084,13 @@ export const Sidebar: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                    if (confirm(`Hapus folder "${currentFolder.name}"? Catatan di dalamnya akan dipindah ke root.`)) {
-                      deleteFolder(currentFolder.id);
-                    }
+                    confirmAction({
+                      title: 'Hapus Folder',
+                      message: `Hapus folder "${currentFolder.name}"? Catatan di dalamnya akan otomatis dipindah ke root.`,
+                      confirmText: 'Hapus Folder',
+                      variant: 'danger',
+                      onConfirm: () => deleteFolder(currentFolder.id),
+                    });
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors"
                 >

@@ -9,6 +9,7 @@ import { MarkdownPreview } from './components/MarkdownPreview';
 import type { MarkdownPreviewHandle } from './components/MarkdownPreview';
 import { StatusBar } from './components/StatusBar';
 import { FirebaseModal } from './components/FirebaseModal';
+import { ConfirmModal } from './components/ConfirmModal';
 import { subscribeAuth, subscribeToUserData } from './services/firebase';
 import { Upload } from 'lucide-react';
 
@@ -232,11 +233,12 @@ export const App: React.FC = () => {
       {/* Bottom Status Bar */}
       <StatusBar />
 
-      {/* Firebase Cloud Sync Modal */}
+      {/* Modals */}
       <FirebaseModal
         isOpen={isFirebaseModalOpen}
         onClose={() => setIsFirebaseModalOpen(false)}
       />
+      <ConfirmModal />
     </div>
   );
 };

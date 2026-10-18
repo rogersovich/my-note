@@ -6,6 +6,7 @@ import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
 import { useNoteStore } from '../store/useNoteStore';
 import { Check, Copy } from 'lucide-react';
+import { Tooltip } from './Tooltip';
 
 export interface MarkdownPreviewHandle {
   scrollToPercentage: (percentage: number) => void;
@@ -165,24 +166,26 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
                           {match[1]}
                         </span>
                       )}
-                      <button
-                        type="button"
-                        onClick={handleCopy}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#161c28] hover:bg-[#1f2738] text-[11px] text-slate-200 border border-[#263042] transition-colors"
-                        title="Copy code"
-                      >
-                        {copied ? (
-                          <>
-                            <Check className="w-3 h-3 text-emerald-400" />
-                            <span className="text-emerald-400">Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3 text-slate-400" />
-                            <span>Copy</span>
-                          </>
-                        )}
-                      </button>
+                      <Tooltip content={copied ? 'Tersalin!' : 'Salin Kode'} position="top">
+                        <button
+                          type="button"
+                          onClick={handleCopy}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#161c28] hover:bg-[#1f2738] text-[11px] text-slate-200 border border-[#263042] transition-colors"
+                          aria-label="Salin kode"
+                        >
+                          {copied ? (
+                            <>
+                              <Check className="w-3 h-3 text-emerald-400" />
+                              <span className="text-emerald-400">Copied</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3 text-slate-400" />
+                              <span>Copy</span>
+                            </>
+                          )}
+                        </button>
+                      </Tooltip>
                     </div>
                     <code className={className} {...props}>
                       {children}

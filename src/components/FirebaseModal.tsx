@@ -23,6 +23,7 @@ import {
 } from '../services/firebase';
 import type { FirebaseConfig } from '../services/firebase';
 import { useNoteStore } from '../store/useNoteStore';
+import { useConfirmStore } from '../store/useConfirmStore';
 
 interface FirebaseModalProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ interface FirebaseModalProps {
 
 export const FirebaseModal: React.FC<FirebaseModalProps> = ({ isOpen, onClose }) => {
   const { currentUser, setCurrentUser, setFirebaseConfigured } = useNoteStore();
+  const { confirm: confirmAction } = useConfirmStore();
 
   const [apiKey, setApiKey] = useState('');
   const [authDomain, setAuthDomain] = useState('');
@@ -151,16 +153,22 @@ export const FirebaseModal: React.FC<FirebaseModalProps> = ({ isOpen, onClose })
   };
 
   const handleClearConfig = () => {
-    if (confirm('Hapus konfigurasi Firebase dari browser ini?')) {
-      saveStoredFirebaseConfig(null);
-      setApiKey('');
-      setAuthDomain('');
-      setProjectId('');
-      setAppId('');
-      setFirebaseConfigured(false);
-      setCurrentUser(null);
-      setStatusMsg({ text: 'Konfigurasi Firebase dihapus.', type: 'info' });
-    }
+    confirmAction({
+      title: 'Hapus Konfigurasi Firebase',
+      message: 'Apakah Anda yakin ingin menghapus konfigurasi Firebase dari browser ini? Sinkronisasi cloud akan dinonaktifkan.',
+      confirmText: 'Hapus Konfigurasi',
+      variant: 'danger',
+      onConfirm: () => {
+        saveStoredFirebaseConfig(null);
+        setApiKey('');
+        setAuthDomain('');
+        setProjectId('');
+        setAppId('');
+        setFirebaseConfigured(false);
+        setCurrentUser(null);
+        setStatusMsg({ text: 'Konfigurasi Firebase dihapus.', type: 'info' });
+      },
+    });
   };
 
   const copySecurityRules = () => {

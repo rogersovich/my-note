@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNoteStore } from '../store/useNoteStore';
 import { FileText, FileCode, X, Plus } from 'lucide-react';
+import { Tooltip } from './Tooltip';
 
 export const TabBar: React.FC = () => {
   const { notes, openTabIds, activeNoteId, setActiveNoteId, closeTab, createNote } = useNoteStore();
@@ -42,30 +43,34 @@ export const TabBar: React.FC = () => {
               <span className="truncate flex-1">{note.title}</span>
 
               {/* Close Button */}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  closeTab(note.id);
-                }}
-                className="ml-2 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-[#202838] hover:text-rose-400 transition-all shrink-0"
-                title="Close tab"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
+              <Tooltip content="Tutup Tab" position="bottom">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    closeTab(note.id);
+                  }}
+                  className="ml-2 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-[#202838] hover:text-rose-400 transition-all shrink-0"
+                  aria-label="Tutup tab"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </Tooltip>
             </div>
           );
         })}
 
         {/* New Tab Button */}
-        <button
-          type="button"
-          onClick={() => createNote('Untitled.md')}
-          className="h-full px-3 text-slate-300 hover:text-white hover:bg-[#161c28] transition-colors flex items-center justify-center border-r border-[#1e2636]"
-          title="New Tab"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
+        <Tooltip content="Tab Baru" position="bottom">
+          <button
+            type="button"
+            onClick={() => createNote('Untitled.md')}
+            className="h-full px-3 text-slate-300 hover:text-white hover:bg-[#161c28] transition-colors flex items-center justify-center border-r border-[#1e2636]"
+            aria-label="Tab Baru"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        </Tooltip>
       </div>
     </div>
   );
