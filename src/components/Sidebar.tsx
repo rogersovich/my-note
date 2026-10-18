@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNoteStore } from '../store/useNoteStore';
 import { 
   FolderPlus, 
@@ -14,7 +14,8 @@ import {
   Edit3, 
   ChevronRight, 
   ChevronDown,
-  X
+  X,
+  Copy
 } from 'lucide-react';
 import type { Folder, Note } from '../types';
 
@@ -60,6 +61,46 @@ export const Sidebar: React.FC = () => {
 
   const [draggedNoteId, setDraggedNoteId] = useState<string | null>(null);
   const [dragOverFolderId, setDragOverFolderId] = useState<string | null | 'root'>(null);
+
+  // Context Menu State
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean;
+    x: number;
+    y: number;
+    type: 'note' | 'folder' | 'empty';
+    targetId: string | null;
+  }>({
+    isOpen: false,
+    x: 0,
+    y: 0,
+    type: 'empty',
+    targetId: null,
+  });
+
+  // Close context menu on outside click, window resize, or Escape
+  useEffect(() => {
+    if (!contextMenu.isOpen) return;
+
+    const handleClose = () => {
+      setContextMenu((prev) => ({ ...prev, isOpen: false }));
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+
+    window.addEventListener('click', handleClose);
+    window.addEventListener('contextmenu', handleClose);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('click', handleClose);
+      window.removeEventListener('contextmenu', handleClose);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [contextMenu.isOpen]);
 
   if (!sidebarOpen) return null;
 
@@ -202,6 +243,18 @@ export const Sidebar: React.FC = () => {
         onDragStart={() => setDraggedNoteId(note.id)}
         onDragEnd={() => setDraggedNoteId(null)}
         onClick={() => setActiveNoteId(note.id)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setActiveNoteId(note.id);
+          setContextMenu({
+            isOpen: true,
+            x: e.clientX,
+            y: e.clientY,
+            type: 'note',
+            targetId: note.id,
+          });
+        }}
         style={{ paddingLeft: `${depth * 14 + 12}px` }}
         className={`group flex items-center justify-between py-1.5 pr-2 rounded-md cursor-pointer text-xs transition-colors my-0.5 ${
           isActive
@@ -295,6 +348,17 @@ export const Sidebar: React.FC = () => {
           </form>
         ) : (
           <div
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setContextMenu({
+                isOpen: true,
+                x: e.clientX,
+                y: e.clientY,
+                type: 'folder',
+                targetId: folder.id,
+              });
+            }}
             onDragOver={(e) => {
               e.preventDefault();
               setDragOverFolderId(folder.id);
@@ -465,6 +529,7 @@ export const Sidebar: React.FC = () => {
             placeholder="Search files..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onContextMenu={(e) => e.stopPropagation()}
             className="w-full bg-[#141822] border border-[#222a3a] focus:border-blue-500 rounded-md pl-8 pr-7 py-1.5 text-xs text-slate-100 placeholder-slate-400 outline-none transition-colors"
           />
           {searchQuery && (
@@ -586,6 +651,16 @@ export const Sidebar: React.FC = () => {
 
       {/* Explorer Tree Section */}
       <div
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setContextMenu({
+            isOpen: true,
+            x: e.clientX,
+            y: e.clientY,
+            type: 'empty',
+            targetId: null,
+          });
+        }}
         onDragOver={(e) => {
           e.preventDefault();
           setDragOverFolderId('root');
@@ -614,10 +689,242 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Bottom Drop Zone / Helper */}
-      <div className="p-2.5 border-t border-[#1e2636] text-xs font-medium text-slate-300 flex items-center justify-between bg-[#0b0d13]">
+      <div
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setContextMenu({
+            isOpen: true,
+            x: e.clientX,
+            y: e.clientY,
+            type: 'empty',
+            targetId: null,
+          });
+        }}
+        className="p-2.5 border-t border-[#1e2636] text-xs font-medium text-slate-300 flex items-center justify-between bg-[#0b0d13]"
+      >
         <span>Total: {notes.length} notes</span>
         <span>{folders.length} folders</span>
       </div>
+
+      {/* Context Menu Popup */}
+      {contextMenu.isOpen && (
+        <div
+          className="fixed z-50 bg-[#121620] border border-[#2b3548] rounded-lg shadow-2xl py-1 text-xs text-slate-200 min-w-[190px] animate-in fade-in duration-75 select-none"
+          style={{
+            top: `${Math.min(contextMenu.y, window.innerHeight - 250)}px`,
+            left: `${Math.min(contextMenu.x, window.innerWidth - 210)}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          {contextMenu.type === 'note' && (() => {
+            const currentNote = notes.find((n) => n.id === contextMenu.targetId);
+            if (!currentNote) return null;
+
+            return (
+              <div className="flex flex-col">
+                <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 border-b border-[#1e2636] truncate">
+                  {currentNote.title}
+                </div>
+                
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveNoteId(currentNote.id);
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                >
+                  <FileText className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Buka Catatan</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    let dupTitle = currentNote.title;
+                    if (dupTitle.includes('.')) {
+                      dupTitle = dupTitle.replace(/(\.[^.]+)$/, ' (Copy)$1');
+                    } else {
+                      dupTitle = `${dupTitle} (Copy)`;
+                    }
+                    const newId = createNote(dupTitle, currentNote.folderId, currentNote.content);
+                    setActiveNoteId(newId);
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                >
+                  <Copy className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Duplikasi</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingNoteId(currentNote.id);
+                    setEditingNoteTitle(currentNote.title);
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Ubah Nama</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleFavorite(currentNote.id);
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                >
+                  <Star className={`w-3.5 h-3.5 ${currentNote.isFavorite ? 'text-amber-400 fill-amber-400' : 'text-slate-400'}`} />
+                  <span>{currentNote.isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}</span>
+                </button>
+
+                <div className="h-[1px] bg-[#1e2636] my-1" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                    if (confirm(`Hapus catatan "${currentNote.title}"?`)) {
+                      deleteNote(currentNote.id);
+                    }
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Hapus Catatan</span>
+                </button>
+              </div>
+            );
+          })()}
+
+          {contextMenu.type === 'folder' && (() => {
+            const currentFolder = folders.find((f) => f.id === contextMenu.targetId);
+            if (!currentFolder) return null;
+
+            return (
+              <div className="flex flex-col">
+                <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 border-b border-[#1e2636] truncate">
+                  {currentFolder.name}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTargetFolderIdForNote(currentFolder.id);
+                    setIsCreatingNote(true);
+                    if (!expandedFolderIds.includes(currentFolder.id)) {
+                      toggleFolderExpanded(currentFolder.id);
+                    }
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                >
+                  <FilePlus className="w-3.5 h-3.5 text-blue-400" />
+                  <span>File Baru di Sini</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFolderParentId(currentFolder.id);
+                    setIsCreatingFolder(true);
+                    if (!expandedFolderIds.includes(currentFolder.id)) {
+                      toggleFolderExpanded(currentFolder.id);
+                    }
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                >
+                  <FolderPlus className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Subfolder Baru</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingFolderId(currentFolder.id);
+                    setEditingFolderName(currentFolder.name);
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Ubah Nama Folder</span>
+                </button>
+
+                <div className="h-[1px] bg-[#1e2636] my-1" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                    if (confirm(`Hapus folder "${currentFolder.name}"? Catatan di dalamnya akan dipindah ke root.`)) {
+                      deleteFolder(currentFolder.id);
+                    }
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 transition-colors"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Hapus Folder</span>
+                </button>
+              </div>
+            );
+          })()}
+
+          {contextMenu.type === 'empty' && (
+            <div className="flex flex-col">
+              <div className="px-3 py-1.5 text-[11px] font-semibold text-slate-400 border-b border-[#1e2636]">
+                Explorer Actions
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setTargetFolderIdForNote(null);
+                  setIsCreatingNote(true);
+                  setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+              >
+                <FilePlus className="w-3.5 h-3.5 text-blue-400" />
+                <span>File Baru</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setFolderParentId(null);
+                  setIsCreatingFolder(true);
+                  setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+              >
+                <FolderPlus className="w-3.5 h-3.5 text-amber-400" />
+                <span>Folder Baru</span>
+              </button>
+
+              <div className="h-[1px] bg-[#1e2636] my-1" />
+
+              <button
+                type="button"
+                onClick={() => {
+                  fileInputRef.current?.click();
+                  setContextMenu((prev) => ({ ...prev, isOpen: false }));
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left text-slate-200 hover:text-white hover:bg-[#182030] transition-colors"
+              >
+                <Upload className="w-3.5 h-3.5 text-slate-400" />
+                <span>Upload File (.md, .txt)</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </aside>
   );
 };
