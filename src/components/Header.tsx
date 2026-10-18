@@ -133,9 +133,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
           </Tooltip>
 
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-md bg-[#161c27] border border-[#2c374d] flex items-center justify-center text-white font-bold text-xs">
-              M
-            </div>
+            <img 
+              src="/favicon-32x32.png" 
+              alt="MyNote Logo" 
+              className="w-7 h-7 rounded-md border border-[#2c374d] object-contain bg-[#161c27] p-0.5"
+            />
             <div className="hidden sm:flex flex-col">
               <span className="font-semibold text-xs tracking-wide text-slate-100 flex items-center gap-1.5">
                 Markdown Viewer
