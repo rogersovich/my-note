@@ -113,8 +113,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
           <button
             type="button"
             onClick={toggleSidebar}
-            className={`p-1.5 rounded-md hover:bg-[#1f242c] transition-colors ${
-              sidebarOpen ? 'text-indigo-400' : 'text-slate-400'
+            className={`p-1.5 rounded-md hover:bg-[#1a202c] transition-colors ${
+              sidebarOpen ? 'text-blue-400' : 'text-slate-300'
             }`}
             title="Toggle Sidebar"
           >
@@ -122,13 +122,13 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-indigo-500/20">
+            <div className="w-7 h-7 rounded-md bg-[#161c27] border border-[#2c374d] flex items-center justify-center text-white font-bold text-xs">
               M
             </div>
             <div className="hidden sm:flex flex-col">
               <span className="font-semibold text-xs tracking-wide text-slate-100 flex items-center gap-1.5">
                 Markdown Viewer
-                <span className="text-[10px] px-1.5 py-0.2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded font-normal">
+                <span className="text-[10px] px-1.5 py-0.2 bg-[#171c26] text-slate-300 border border-[#2b3548] rounded font-normal">
                   v2.0
                 </span>
               </span>
@@ -137,15 +137,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
         </div>
 
         {/* Center / Actions */}
-        <div className="flex items-center gap-1 bg-[#161b24] p-1 rounded-lg border border-[#21262d]">
+        <div className="flex items-center gap-1 bg-[#121620] p-1 rounded-md border border-[#222838]">
           {/* View Mode Switches */}
           <button
             type="button"
             onClick={() => setViewMode('split')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors ${
               viewMode === 'split'
-                ? 'bg-indigo-600 text-white font-medium shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#212631]'
+                ? 'bg-[#2563eb] text-white font-medium'
+                : 'text-slate-300 hover:text-white hover:bg-[#1a202e]'
             }`}
             title="Split View (Editor + Preview)"
           >
@@ -158,8 +158,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
             onClick={() => setViewMode('editor')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors ${
               viewMode === 'editor'
-                ? 'bg-indigo-600 text-white font-medium shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#212631]'
+                ? 'bg-[#2563eb] text-white font-medium'
+                : 'text-slate-300 hover:text-white hover:bg-[#1a202e]'
             }`}
             title="Editor Only"
           >
@@ -172,8 +172,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
             onClick={() => setViewMode('preview')}
             className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors ${
               viewMode === 'preview'
-                ? 'bg-indigo-600 text-white font-medium shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#212631]'
+                ? 'bg-[#2563eb] text-white font-medium'
+                : 'text-slate-300 hover:text-white hover:bg-[#1a202e]'
             }`}
             title="Preview Only"
           >
@@ -190,33 +190,33 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
             onClick={toggleSyncScroll}
             className={`p-1.5 rounded-md text-xs flex items-center gap-1 transition-colors ${
               syncScrollEnabled
-                ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-[#161b24]'
+                ? 'bg-[#182030] text-blue-400 border border-blue-500/30'
+                : 'text-slate-300 hover:text-white hover:bg-[#182030]'
             }`}
             title={`Sync Scrolling: ${syncScrollEnabled ? 'Enabled' : 'Disabled'}`}
           >
-            <RotateCw className={`w-3.5 h-3.5 ${syncScrollEnabled ? 'text-indigo-400' : 'text-slate-500'}`} />
+            <RotateCw className={`w-3.5 h-3.5 ${syncScrollEnabled ? 'text-blue-400' : 'text-slate-400'}`} />
           </button>
 
           {/* Font Size Adjust */}
           <div 
-            className="hidden sm:flex items-center bg-[#161b24] border border-[#21262d] rounded-md px-1.5 py-0.5 text-xs text-slate-300"
+            className="hidden sm:flex items-center bg-[#141822] border border-[#222a3a] rounded-md px-1.5 py-0.5 text-xs text-slate-300"
             title="Ukuran Font Teks (Editor & Preview)"
           >
-            <span className="text-[10px] text-slate-500 mr-1 select-none font-semibold">Aa</span>
+            <span className="text-[10px] text-slate-400 mr-1 select-none font-semibold">Aa</span>
             <button
               type="button"
               onClick={() => setFontSize(fontSize - 1)}
-              className="px-1.5 py-0.5 hover:text-white text-slate-400 font-bold hover:bg-[#212631] rounded transition-colors"
+              className="px-1.5 py-0.5 hover:text-white text-slate-300 font-bold hover:bg-[#182030] rounded transition-colors"
               title="Perkecil Ukuran Font (-)"
             >
               -
             </button>
-            <span className="px-1.5 font-mono text-[11px] text-slate-200 font-medium">{fontSize}px</span>
+            <span className="px-1.5 font-mono text-[11px] text-slate-100 font-semibold">{fontSize}px</span>
             <button
               type="button"
               onClick={() => setFontSize(fontSize + 1)}
-              className="px-1.5 py-0.5 hover:text-white text-slate-400 font-bold hover:bg-[#212631] rounded transition-colors"
+              className="px-1.5 py-0.5 hover:text-white text-slate-300 font-bold hover:bg-[#182030] rounded transition-colors"
               title="Perbesar Ukuran Font (+)"
             >
               +
@@ -228,42 +228,42 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
             <button
               type="button"
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#161b24] hover:bg-[#212631] border border-[#21262d] rounded-md text-xs text-slate-200 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-[#141822] hover:bg-[#182030] border border-[#222a3a] rounded-md text-xs text-slate-200 transition-colors"
               title="Export Options"
             >
-              <Download className="w-3.5 h-3.5 text-slate-400" />
+              <Download className="w-3.5 h-3.5 text-slate-300" />
               <span className="hidden sm:inline">Export</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <ChevronDown className="w-3 h-3 text-slate-300" />
             </button>
 
             {showExportMenu && (
               <div 
-                className="absolute right-0 mt-1 w-44 bg-[#161b24] border border-[#282e39] rounded-lg shadow-xl py-1 z-50 text-xs text-slate-200"
+                className="absolute right-0 mt-1 w-44 bg-[#141822] border border-[#2b3548] rounded-lg shadow-xl py-1 z-50 text-xs text-slate-200"
                 onMouseLeave={() => setShowExportMenu(false)}
               >
                 <button
                   type="button"
                   onClick={handleExportMarkdown}
-                  className="w-full text-left px-3 py-2 hover:bg-[#212631] flex items-center justify-between"
+                  className="w-full text-left px-3 py-2 hover:bg-[#182030] flex items-center justify-between"
                 >
                   <span>Markdown (.md)</span>
-                  <span className="text-[10px] text-slate-500">Source</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Source</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleExportHtml}
-                  className="w-full text-left px-3 py-2 hover:bg-[#212631] flex items-center justify-between"
+                  className="w-full text-left px-3 py-2 hover:bg-[#182030] flex items-center justify-between"
                 >
                   <span>HTML Document</span>
-                  <span className="text-[10px] text-slate-500">Standalone</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Standalone</span>
                 </button>
                 <button
                   type="button"
                   onClick={handlePrintPdf}
-                  className="w-full text-left px-3 py-2 hover:bg-[#212631] flex items-center justify-between border-t border-[#21262d]"
+                  className="w-full text-left px-3 py-2 hover:bg-[#182030] flex items-center justify-between border-t border-[#1e2636]"
                 >
                   <span>Print / Save PDF</span>
-                  <span className="text-[10px] text-slate-500">Print dialog</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Print dialog</span>
                 </button>
               </div>
             )}
@@ -272,7 +272,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
           {/* Cloud Sync Status Indicator */}
           <div
             onClick={onOpenFirebaseModal}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#161b24] border border-[#21262d] hover:border-slate-600 transition-colors cursor-pointer text-xs"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#141822] border border-[#222a3a] hover:border-blue-500/60 transition-colors cursor-pointer text-xs"
             title="Realtime Cloud Status"
           >
             {syncStatus === 'synced' ? (
@@ -287,8 +287,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
               </>
             ) : syncStatus === 'local' ? (
               <>
-                <Cloud className="w-3.5 h-3.5 text-slate-400" />
-                <span className="hidden md:inline text-[11px] text-slate-400">Local Only</span>
+                <Cloud className="w-3.5 h-3.5 text-slate-300" />
+                <span className="hidden md:inline text-[11px] text-slate-300">Local Only</span>
               </>
             ) : (
               <>
@@ -307,12 +307,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
                   alt={currentUser.displayName || 'User'}
                   referrerPolicy="no-referrer"
                   onError={() => setAvatarImgError(true)}
-                  className="w-7 h-7 rounded-full border border-indigo-500/40 object-cover"
+                  className="w-7 h-7 rounded-full border border-blue-500/40 object-cover"
                   title={currentUser.displayName || currentUser.email || 'Logged in'}
                 />
               ) : (
                 <div 
-                  className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold text-xs flex items-center justify-center border border-indigo-400/40 shadow-sm"
+                  className="w-7 h-7 rounded-full bg-[#1a2130] text-slate-100 font-bold text-xs flex items-center justify-center border border-[#2e3a52]"
                   title={currentUser.displayName || currentUser.email || 'Logged in'}
                 >
                   {(currentUser.displayName || currentUser.email || 'U')[0].toUpperCase()}
@@ -321,7 +321,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(true)}
-                className="p-1.5 rounded-md hover:bg-[#1f242c] text-slate-400 hover:text-rose-400 transition-colors"
+                className="p-1.5 rounded-md hover:bg-[#1a202e] text-slate-300 hover:text-rose-400 transition-colors"
                 title="Log out"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -331,7 +331,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
             <button
               type="button"
               onClick={onOpenFirebaseModal}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-md text-xs font-medium transition-all shadow-sm shadow-indigo-600/20"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-md text-xs font-medium transition-colors border border-blue-500/30 shadow-none"
               title="Connect Firebase to sync realtime"
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -343,7 +343,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
           <button
             type="button"
             onClick={onOpenFirebaseModal}
-            className="p-1.5 rounded-md hover:bg-[#1f242c] text-slate-400 hover:text-slate-200 transition-colors"
+            className="p-1.5 rounded-md hover:bg-[#1a202e] text-slate-300 hover:text-white transition-colors"
             title="Settings & Firebase"
           >
             <Settings className="w-4 h-4" />
@@ -357,18 +357,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
       {/* Logout Confirmation Modal */}
       {showLogoutModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-150">
-          <div className="bg-[#121620] border border-[#282e39] rounded-xl w-full max-w-sm p-5 shadow-2xl space-y-4">
+          <div className="bg-[#121620] border border-[#2b3548] rounded-xl w-full max-w-sm p-5 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 shrink-0">
                 <LogOut className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-semibold text-sm text-slate-100">Konfirmasi Keluar</h3>
-                <p className="text-xs text-slate-400">Yakin ingin logout dari akun Google?</p>
+                <p className="text-xs text-slate-300">Yakin ingin logout dari akun Google?</p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-400 bg-[#0b0e14] p-3 rounded-lg border border-[#21262d] leading-relaxed">
+            <p className="text-xs text-slate-300 bg-[#0b0d13] p-3 rounded-lg border border-[#1e2636] leading-relaxed">
               Catatan kamu tetap tersimpan aman di cloud Firebase. Kamu bisa login kembali kapan saja untuk sinkronisasi.
             </p>
 
@@ -376,7 +376,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(false)}
-                className="px-3.5 py-1.5 rounded-md hover:bg-[#1f242c] text-xs text-slate-300 transition-colors"
+                className="px-3.5 py-1.5 rounded-md hover:bg-[#182030] text-xs text-slate-300 hover:text-white transition-colors"
               >
                 Batal
               </button>
@@ -386,7 +386,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenFirebaseModal }) => {
                   setShowLogoutModal(false);
                   handleLogout();
                 }}
-                className="px-4 py-1.5 rounded-md bg-rose-600 hover:bg-rose-500 text-xs text-white font-medium shadow-sm transition-colors"
+                className="px-4 py-1.5 rounded-md bg-rose-600 hover:bg-rose-500 text-xs text-white font-medium shadow-none transition-colors"
               >
                 Ya, Keluar
               </button>

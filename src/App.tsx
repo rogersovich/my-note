@@ -108,7 +108,7 @@ export const App: React.FC = () => {
   }, [toggleSidebar, setViewMode, viewMode]);
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-[#0e1117] text-slate-200 overflow-hidden font-sans">
+    <div className="flex flex-col h-screen w-screen bg-[#0b0d13] text-slate-100 overflow-hidden font-sans">
       {/* Top Header & TabBar */}
       <Header onOpenFirebaseModal={() => setIsFirebaseModalOpen(true)} />
 
@@ -118,7 +118,7 @@ export const App: React.FC = () => {
         <Sidebar />
 
         {/* Center / Right Editor & Preview Area */}
-        <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-[#0d1117]">
+        <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-[#0e1118]">
           {/* Editor Formatting Toolbar (visible in Split & Editor modes) */}
           {viewMode !== 'preview' && (
             <EditorToolbar onInsert={handleToolbarInsert} />
@@ -130,7 +130,7 @@ export const App: React.FC = () => {
             {viewMode !== 'preview' && (
               <div
                 className={`h-full flex flex-col ${
-                  viewMode === 'split' ? 'w-1/2 border-r border-[#21262d]' : 'w-full'
+                  viewMode === 'split' ? 'w-1/2 border-r border-[#1e2636]' : 'w-full'
                 }`}
               >
                 <CodeEditor

@@ -78,7 +78,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
 
     if (!activeNote) {
       return (
-        <div className="flex-1 flex items-center justify-center text-slate-500 bg-[#0d1117] text-sm">
+        <div className="flex-1 flex items-center justify-center text-slate-300 font-medium bg-[#0e1118] text-sm">
           Select or create a note to start editing
         </div>
       );
@@ -86,7 +86,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
 
     return (
       <div 
-        className="flex-1 h-full overflow-hidden flex flex-col bg-[#0b0e14]"
+        className="flex-1 h-full overflow-hidden flex flex-col bg-[#0b0d13]"
         style={{
           '--editor-font-size': `${fontSize}px`,
         } as React.CSSProperties}

@@ -4,7 +4,7 @@
 
 @layer base {
   * {
-    border-color: #21262d;
+    border-color: #212631;
     box-sizing: border-box;
   }
 
@@ -12,6 +12,8 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     overflow: hidden;
     user-select: none;
+    background-color: #0b0d13;
+    color: #e2e8f0;
   }
 
   input, textarea, [contenteditable="true"] {
@@ -19,7 +21,7 @@
   }
 }
 
-/* Custom scrollbar for dark modern UI */
+/* Crisp, solid custom scrollbar without blurry glow */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -30,21 +32,22 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #282e39;
-  border-radius: 9999px;
+  background: #283040;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3b4354;
+  background: #3b465c;
 }
 
-/* CodeMirror custom styling */
+/* CodeMirror 6 custom styling - solid and high contrast */
 .cm-editor {
   height: 100% !important;
   font-family: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
   font-size: var(--editor-font-size, 14px) !important;
-  line-height: 1.6 !important;
+  line-height: 1.65 !important;
   background-color: transparent !important;
+  color: #e2e8f0 !important;
 }
 
 .cm-scroller {
@@ -53,140 +56,150 @@
 }
 
 .cm-gutters {
-  background-color: #0b0e14 !important;
-  border-right: 1px solid #1c212c !important;
-  color: #4b5563 !important;
+  background-color: #0d1017 !important;
+  border-right: 1px solid #1c222e !important;
+  color: #64748b !important; /* High contrast line numbers (WCAG AA) */
 }
 
 .cm-activeLineGutter {
-  background-color: #171d28 !important;
-  color: #94a3b8 !important;
+  background-color: #171d2b !important;
+  color: #cbd5e1 !important;
+  font-weight: 600 !important;
 }
 
 .cm-activeLine {
-  background-color: #151b2680 !important;
+  background-color: #141a26 !important;
 }
 
-/* Markdown preview typography & callouts */
+/* Markdown preview typography & callouts - clean, high-contrast, zero-slop */
 .markdown-preview {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #d1d5db;
-  line-height: 1.7;
+  color: #e2e8f0; /* Crisp Slate-200 with 14:1 contrast on #0b0d13 */
+  line-height: 1.8;
+  letter-spacing: 0.01em;
   user-select: text;
 }
 
 .markdown-preview h1 {
   font-size: 2rem;
   font-weight: 700;
-  color: #f3f4f6;
-  margin-top: 1.5rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #21262d;
+  color: #f8fafc;
+  margin-top: 1.75rem;
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #252c3b;
+  letter-spacing: -0.02em;
 }
 
 .markdown-preview h2 {
-  font-size: 1.5rem;
+  font-size: 1.45rem;
   font-weight: 600;
-  color: #f3f4f6;
-  margin-top: 1.3rem;
-  margin-bottom: 0.6rem;
-  padding-bottom: 0.4rem;
-  border-bottom: 1px solid #1c212c;
+  color: #f1f5f9;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid #1f2533;
+  letter-spacing: -0.015em;
 }
 
 .markdown-preview h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #e5e7eb;
-  margin-top: 1rem;
+  color: #f1f5f9;
+  margin-top: 1.25rem;
   margin-bottom: 0.5rem;
 }
 
 .markdown-preview h4, .markdown-preview h5, .markdown-preview h6 {
   font-weight: 600;
-  color: #d1d5db;
-  margin-top: 0.75rem;
+  color: #e2e8f0;
+  margin-top: 1rem;
   margin-bottom: 0.5rem;
 }
 
 .markdown-preview p {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  color: #cbd5e1; /* Clear readable text */
 }
 
 .markdown-preview ul {
   list-style-type: disc;
   padding-left: 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  color: #cbd5e1;
 }
 
 .markdown-preview ol {
   list-style-type: decimal;
   padding-left: 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  color: #cbd5e1;
 }
 
 .markdown-preview li {
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
 }
 
 .markdown-preview blockquote {
-  border-left: 4px solid #6366f1;
-  padding: 0.6rem 1rem;
-  margin: 1rem 0;
-  background-color: #161b22;
+  border-left: 4px solid #2563eb;
+  padding: 0.75rem 1.1rem;
+  margin: 1.25rem 0;
+  background-color: #121622;
   border-radius: 0 6px 6px 0;
-  color: #94a3b8;
+  color: #cbd5e1;
   font-style: italic;
 }
 
 .markdown-preview table {
   width: 100%;
   border-collapse: collapse;
-  margin: 1.25rem 0;
+  margin: 1.5rem 0;
   font-size: 0.925rem;
+  border: 1px solid #252d3d;
 }
 
 .markdown-preview th, .markdown-preview td {
-  border: 1px solid #282e39;
-  padding: 0.6rem 0.9rem;
+  border: 1px solid #252d3d;
+  padding: 0.65rem 1rem;
   text-align: left;
 }
 
 .markdown-preview th {
-  background-color: #161b24;
-  color: #f1f5f9;
+  background-color: #161c28;
+  color: #f8fafc;
   font-weight: 600;
 }
 
 .markdown-preview tr:nth-child(even) {
-  background-color: #0e121a;
+  background-color: #0f121a;
 }
 
 .markdown-preview a {
-  color: #38bdf8;
+  color: #60a5fa;
   text-decoration: underline;
   text-underline-offset: 3px;
+  transition: color 0.15s ease;
 }
 
 .markdown-preview a:hover {
-  color: #7dd3fc;
+  color: #93c5fd;
 }
 
 .markdown-preview code:not(pre code) {
-  background-color: #1e2430;
+  background-color: #171d29;
   color: #f43f5e;
-  padding: 0.2rem 0.4rem;
+  border: 1px solid #252d3d;
+  padding: 0.15rem 0.45rem;
   border-radius: 4px;
   font-size: 0.875em;
   font-family: 'Fira Code', monospace;
 }
 
 .markdown-preview pre {
-  margin: 1rem 0;
+  margin: 1.25rem 0;
   border-radius: 8px;
-  background-color: #0b0e14 !important;
-  border: 1px solid #21262d;
+  background-color: #0d1017 !important;
+  border: 1px solid #242b3b;
   overflow-x: auto;
   position: relative;
 }
@@ -194,53 +207,55 @@
 .markdown-preview pre code {
   font-family: 'Fira Code', monospace;
   font-size: 0.875rem;
-  line-height: 1.5;
+  line-height: 1.6;
   background-color: transparent !important;
-  padding: 1rem !important;
+  padding: 1.1rem !important;
   display: block;
+  color: #e2e8f0;
 }
 
 .markdown-preview hr {
   border: 0;
   height: 1px;
-  background: #21262d;
-  margin: 1.5rem 0;
+  background: #252d3d;
+  margin: 1.75rem 0;
 }
 
 .markdown-preview img {
   max-width: 100%;
   border-radius: 8px;
-  margin: 1rem 0;
+  margin: 1.25rem 0;
+  border: 1px solid #252d3d;
 }
 
-/* Callouts / GitHub alerts */
+/* Callouts / GitHub alerts - Solid, clear, no blurry glow */
 .markdown-alert {
-  padding: 0.75rem 1rem;
-  margin: 1rem 0;
+  padding: 0.85rem 1.1rem;
+  margin: 1.25rem 0;
   border-radius: 6px;
   border-left: 4px solid;
 }
 
 .markdown-alert-note {
-  background-color: rgba(56, 189, 248, 0.1);
-  border-color: #38bdf8;
-  color: #bae6fd;
+  background-color: #101929;
+  border-color: #3b82f6;
+  color: #bfdbfe;
 }
 
 .markdown-alert-tip {
-  background-color: rgba(34, 197, 94, 0.1);
-  border-color: #22c55e;
-  color: #bbf7d0;
+  background-color: #0d1e18;
+  border-color: #10b981;
+  color: #a7f3d0;
 }
 
 .markdown-alert-warning {
-  background-color: rgba(234, 179, 8, 0.1);
-  border-color: #eab308;
-  color: #fef08a;
+  background-color: #211c10;
+  border-color: #f59e0b;
+  color: #fde68a;
 }
 
 .markdown-alert-caution {
-  background-color: rgba(239, 68, 68, 0.1);
+  background-color: #231215;
   border-color: #ef4444;
   color: #fecaca;
 }

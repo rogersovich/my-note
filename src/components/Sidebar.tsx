@@ -189,7 +189,7 @@ export const Sidebar: React.FC = () => {
             onChange={(e) => setEditingNoteTitle(e.target.value)}
             onBlur={() => handleRenameNoteSubmit(note.id)}
             autoFocus
-            className="w-full bg-[#0b0e14] border border-indigo-500 rounded px-1.5 py-0.5 text-xs text-slate-100 outline-none"
+            className="w-full bg-[#0b0d13] border border-blue-500 rounded px-1.5 py-0.5 text-xs text-slate-100 outline-none"
           />
         </form>
       );
@@ -205,15 +205,15 @@ export const Sidebar: React.FC = () => {
         style={{ paddingLeft: `${depth * 14 + 12}px` }}
         className={`group flex items-center justify-between py-1.5 pr-2 rounded-md cursor-pointer text-xs transition-colors my-0.5 ${
           isActive
-            ? 'bg-[#1c2230] text-indigo-300 font-medium'
-            : 'text-slate-300 hover:bg-[#161b24] hover:text-slate-100'
+            ? 'bg-[#182030] text-white font-medium border-l-2 border-blue-500'
+            : 'text-slate-300 hover:bg-[#141824] hover:text-white'
         }`}
       >
         <div className="flex items-center gap-2 truncate min-w-0 flex-1 mr-1">
           {isMd ? (
-            <FileCode className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-indigo-400' : 'text-slate-500 group-hover:text-slate-400'}`} />
+            <FileCode className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
           ) : (
-            <FileText className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-400'}`} />
+            <FileText className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-200'}`} />
           )}
           <span className="truncate">{note.title}</span>
         </div>
@@ -226,8 +226,8 @@ export const Sidebar: React.FC = () => {
               e.stopPropagation();
               toggleFavorite(note.id);
             }}
-            className={`p-1 rounded hover:bg-slate-700/50 ${
-              note.isFavorite ? 'text-amber-400 opacity-100' : 'text-slate-500 hover:text-amber-400'
+            className={`p-1 rounded hover:bg-[#1e2738] ${
+              note.isFavorite ? 'text-amber-400 opacity-100' : 'text-slate-400 hover:text-amber-400'
             }`}
             title={note.isFavorite ? 'Favorited' : 'Favorite'}
           >
@@ -241,7 +241,7 @@ export const Sidebar: React.FC = () => {
               setEditingNoteId(note.id);
               setEditingNoteTitle(note.title);
             }}
-            className="p-1 rounded hover:bg-slate-700/50 text-slate-500 hover:text-slate-200"
+            className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-slate-100"
             title="Rename"
           >
             <Edit3 className="w-3 h-3" />
@@ -255,7 +255,7 @@ export const Sidebar: React.FC = () => {
                 deleteNote(note.id);
               }
             }}
-            className="p-1 rounded hover:bg-slate-700/50 text-slate-500 hover:text-rose-400"
+            className="p-1 rounded hover:bg-[#1e2738] text-slate-400 hover:text-rose-400"
             title="Delete"
           >
             <Trash2 className="w-3 h-3" />
@@ -290,7 +290,7 @@ export const Sidebar: React.FC = () => {
               onChange={(e) => setEditingFolderName(e.target.value)}
               onBlur={() => handleRenameFolderSubmit(folder.id)}
               autoFocus
-              className="w-full bg-[#0b0e14] border border-indigo-500 rounded px-1.5 py-0.5 text-xs text-slate-100 outline-none"
+              className="w-full bg-[#0b0d13] border border-blue-500 rounded px-1.5 py-0.5 text-xs text-slate-100 outline-none"
             />
           </form>
         ) : (
@@ -304,8 +304,8 @@ export const Sidebar: React.FC = () => {
             style={{ paddingLeft: `${depth * 14 + 8}px` }}
             className={`group flex items-center justify-between py-1.5 pr-2 rounded-md cursor-pointer text-xs transition-colors my-0.5 ${
               isDragOver
-                ? 'bg-indigo-950/60 border border-indigo-500'
-                : 'text-slate-200 hover:bg-[#161b24]'
+                ? 'bg-blue-950/60 border border-blue-500'
+                : 'text-slate-200 hover:bg-[#141824]'
             }`}
           >
             {/* Folder Toggle & Name */}
@@ -313,7 +313,7 @@ export const Sidebar: React.FC = () => {
               onClick={() => toggleFolderExpanded(folder.id)}
               className="flex items-center gap-1.5 truncate min-w-0 flex-1 mr-1"
             >
-              <span className="text-slate-500 hover:text-slate-300 p-0.5">
+              <span className="text-slate-400 hover:text-slate-200 p-0.5">
                 {isExpanded ? (
                   <ChevronDown className="w-3.5 h-3.5" />
                 ) : (
@@ -324,11 +324,11 @@ export const Sidebar: React.FC = () => {
               {isExpanded ? (
                 <FolderOpen className="w-4 h-4 text-amber-400 shrink-0" />
               ) : (
-                <FolderIcon className="w-4 h-4 text-amber-400/80 shrink-0" />
+                <FolderIcon className="w-4 h-4 text-amber-400/90 shrink-0" />
               )}
 
               <span className="truncate font-medium">{folder.name}</span>
-              <span className="text-[10px] text-slate-500 ml-1">
+              <span className="text-[10px] text-slate-400 ml-1 font-mono">
                 ({childNotes.length})
               </span>
             </div>
@@ -343,7 +343,7 @@ export const Sidebar: React.FC = () => {
                   setIsCreatingNote(true);
                   if (!isExpanded) toggleFolderExpanded(folder.id);
                 }}
-                className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-100"
+                className="p-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-white"
                 title="New file in this folder"
               >
                 <FilePlus className="w-3 h-3" />
@@ -356,7 +356,7 @@ export const Sidebar: React.FC = () => {
                   setEditingFolderId(folder.id);
                   setEditingFolderName(folder.name);
                 }}
-                className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-100"
+                className="p-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-white"
                 title="Rename folder"
               >
                 <Edit3 className="w-3 h-3" />
@@ -370,7 +370,7 @@ export const Sidebar: React.FC = () => {
                     deleteFolder(folder.id);
                   }
                 }}
-                className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-rose-400"
+                className="p-1 rounded hover:bg-[#1e2738] text-slate-300 hover:text-rose-400"
                 title="Delete folder"
               >
                 <Trash2 className="w-3 h-3" />
@@ -387,7 +387,7 @@ export const Sidebar: React.FC = () => {
             {childFolders.length === 0 && childNotes.length === 0 && (
               <div
                 style={{ paddingLeft: `${(depth + 1) * 14 + 16}px` }}
-                className="py-1 text-[11px] text-slate-600 italic"
+                className="py-1 text-[11px] text-slate-400 italic"
               >
                 Empty folder (drag files here)
               </div>
@@ -403,7 +403,7 @@ export const Sidebar: React.FC = () => {
   const rootNotes = filteredNotes.filter((n) => n.folderId === null);
 
   return (
-    <aside className="w-64 sm:w-72 bg-[#0d1117] border-r border-[#21262d] flex flex-col h-full shrink-0 select-none z-20">
+    <aside className="w-64 sm:w-72 bg-[#0e1118] border-r border-[#1e2636] flex flex-col h-full shrink-0 select-none z-20">
       {/* Hidden File Input for uploading from disk */}
       <input
         ref={fileInputRef}
@@ -415,8 +415,8 @@ export const Sidebar: React.FC = () => {
       />
 
       {/* Sidebar Header */}
-      <div className="flex items-center justify-between px-3 h-10 border-b border-[#21262d]">
-        <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+      <div className="flex items-center justify-between px-3 h-10 border-b border-[#1e2636]">
+        <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
           Explorer
         </span>
 
@@ -427,7 +427,7 @@ export const Sidebar: React.FC = () => {
               setTargetFolderIdForNote(null);
               setIsCreatingNote(true);
             }}
-            className="p-1.5 rounded hover:bg-[#1c2230] text-slate-400 hover:text-indigo-400 transition-colors"
+            className="p-1.5 rounded hover:bg-[#182030] text-slate-300 hover:text-white transition-colors"
             title="New File"
           >
             <FilePlus className="w-4 h-4" />
@@ -439,7 +439,7 @@ export const Sidebar: React.FC = () => {
               setFolderParentId(null);
               setIsCreatingFolder(true);
             }}
-            className="p-1.5 rounded hover:bg-[#1c2230] text-slate-400 hover:text-amber-400 transition-colors"
+            className="p-1.5 rounded hover:bg-[#182030] text-slate-300 hover:text-amber-400 transition-colors"
             title="New Folder"
           >
             <FolderPlus className="w-4 h-4" />
@@ -448,7 +448,7 @@ export const Sidebar: React.FC = () => {
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="p-1.5 rounded hover:bg-[#1c2230] text-slate-400 hover:text-blue-400 transition-colors"
+            className="p-1.5 rounded hover:bg-[#182030] text-slate-300 hover:text-blue-400 transition-colors"
             title="Upload Files (.md, .txt)"
           >
             <Upload className="w-4 h-4" />
@@ -459,19 +459,19 @@ export const Sidebar: React.FC = () => {
       {/* Search Input */}
       <div className="p-2.5 pb-2">
         <div className="relative flex items-center">
-          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 pointer-events-none" />
           <input
             type="text"
             placeholder="Search files..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#161b24] border border-[#21262d] focus:border-indigo-500 rounded-lg pl-8 pr-7 py-1.5 text-xs text-slate-200 placeholder-slate-500 outline-none transition-colors"
+            className="w-full bg-[#141822] border border-[#222a3a] focus:border-blue-500 rounded-md pl-8 pr-7 py-1.5 text-xs text-slate-100 placeholder-slate-400 outline-none transition-colors"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2 text-slate-500 hover:text-slate-300"
+              className="absolute right-2 text-slate-400 hover:text-white"
             >
               <X className="w-3 h-3" />
             </button>
@@ -481,14 +481,14 @@ export const Sidebar: React.FC = () => {
 
       {/* Category Pills (All, Recent, Favs) */}
       <div className="px-2.5 pb-2">
-        <div className="grid grid-cols-3 bg-[#161b24] p-0.5 rounded-lg border border-[#21262d] text-[11px] text-center font-medium">
+        <div className="grid grid-cols-3 bg-[#121620] p-0.5 rounded-md border border-[#222a3a] text-[11px] text-center font-medium">
           <button
             type="button"
             onClick={() => setFilterCategory('all')}
-            className={`py-1 rounded-md transition-colors ${
+            className={`py-1 rounded transition-colors ${
               filterCategory === 'all'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#2563eb] text-white font-medium'
+                : 'text-slate-300 hover:text-white hover:bg-[#182030]'
             }`}
           >
             All
@@ -496,10 +496,10 @@ export const Sidebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilterCategory('recent')}
-            className={`py-1 rounded-md transition-colors ${
+            className={`py-1 rounded transition-colors ${
               filterCategory === 'recent'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#2563eb] text-white font-medium'
+                : 'text-slate-300 hover:text-white hover:bg-[#182030]'
             }`}
           >
             Recent
@@ -507,10 +507,10 @@ export const Sidebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilterCategory('favs')}
-            className={`py-1 rounded-md transition-colors ${
+            className={`py-1 rounded transition-colors ${
               filterCategory === 'favs'
-                ? 'bg-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-[#2563eb] text-white font-medium'
+                : 'text-slate-300 hover:text-white hover:bg-[#182030]'
             }`}
           >
             Favs
@@ -522,9 +522,9 @@ export const Sidebar: React.FC = () => {
       {isCreatingFolder && (
         <form
           onSubmit={handleCreateFolderSubmit}
-          className="mx-2.5 mb-2 p-2 bg-[#161b24] border border-indigo-500/50 rounded-lg flex flex-col gap-1.5"
+          className="mx-2.5 mb-2 p-2 bg-[#141824] border border-blue-500/50 rounded-md flex flex-col gap-1.5"
         >
-          <span className="text-[11px] text-indigo-400 font-medium">Create New Folder</span>
+          <span className="text-[11px] text-blue-400 font-medium">Create New Folder</span>
           <div className="flex gap-1">
             <input
               type="text"
@@ -532,18 +532,18 @@ export const Sidebar: React.FC = () => {
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
               autoFocus
-              className="w-full bg-[#0b0e14] border border-[#282e39] focus:border-indigo-500 rounded px-2 py-1 text-xs text-slate-100 outline-none"
+              className="w-full bg-[#0b0d13] border border-[#283245] focus:border-blue-500 rounded px-2 py-1 text-xs text-slate-100 outline-none"
             />
             <button
               type="submit"
-              className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs"
+              className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded text-xs transition-colors"
             >
               Add
             </button>
             <button
               type="button"
               onClick={() => setIsCreatingFolder(false)}
-              className="px-2 py-1 hover:bg-[#282e39] text-slate-400 rounded text-xs"
+              className="px-2 py-1 hover:bg-[#202838] text-slate-300 rounded text-xs"
             >
               Cancel
             </button>
@@ -555,9 +555,9 @@ export const Sidebar: React.FC = () => {
       {isCreatingNote && (
         <form
           onSubmit={handleCreateNoteSubmit}
-          className="mx-2.5 mb-2 p-2 bg-[#161b24] border border-indigo-500/50 rounded-lg flex flex-col gap-1.5"
+          className="mx-2.5 mb-2 p-2 bg-[#141824] border border-blue-500/50 rounded-md flex flex-col gap-1.5"
         >
-          <span className="text-[11px] text-indigo-400 font-medium">Create New Note</span>
+          <span className="text-[11px] text-blue-400 font-medium">Create New Note</span>
           <div className="flex gap-1">
             <input
               type="text"
@@ -565,18 +565,18 @@ export const Sidebar: React.FC = () => {
               value={newNoteTitle}
               onChange={(e) => setNewNoteTitle(e.target.value)}
               autoFocus
-              className="w-full bg-[#0b0e14] border border-[#282e39] focus:border-indigo-500 rounded px-2 py-1 text-xs text-slate-100 outline-none"
+              className="w-full bg-[#0b0d13] border border-[#283245] focus:border-blue-500 rounded px-2 py-1 text-xs text-slate-100 outline-none"
             />
             <button
               type="submit"
-              className="px-2 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs"
+              className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded text-xs transition-colors"
             >
               Add
             </button>
             <button
               type="button"
               onClick={() => setIsCreatingNote(false)}
-              className="px-2 py-1 hover:bg-[#282e39] text-slate-400 rounded text-xs"
+              className="px-2 py-1 hover:bg-[#202838] text-slate-300 rounded text-xs"
             >
               Cancel
             </button>
@@ -594,9 +594,9 @@ export const Sidebar: React.FC = () => {
         onDrop={(e) => handleFileDropFromOs(e, null)}
         className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5 custom-scroll"
       >
-        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 px-2 py-1 uppercase tracking-wider">
+        <div className="flex items-center justify-between text-[11px] font-semibold text-slate-300 px-2 py-1.5 uppercase tracking-wider">
           <span>Workspaces</span>
-          <span className="text-[10px] text-slate-600 font-normal">Drag files to move</span>
+          <span className="text-[10px] text-slate-400 font-normal">Drag files to move</span>
         </div>
 
         {/* Folders */}
@@ -607,14 +607,14 @@ export const Sidebar: React.FC = () => {
 
         {/* If empty */}
         {rootFolders.length === 0 && rootNotes.length === 0 && (
-          <div className="text-center py-8 text-xs text-slate-500 px-4">
-            No notes found. Click <span className="text-indigo-400">+ File</span> or drag `.md` / `.txt` files here to start.
+          <div className="text-center py-8 text-xs text-slate-400 px-4">
+            No notes found. Click <span className="text-blue-400 font-medium">+ File</span> or drag `.md` / `.txt` files here to start.
           </div>
         )}
       </div>
 
       {/* Bottom Drop Zone / Helper */}
-      <div className="p-2 border-t border-[#21262d] text-[11px] text-slate-500 flex items-center justify-between bg-[#0b0e14]">
+      <div className="p-2.5 border-t border-[#1e2636] text-xs font-medium text-slate-300 flex items-center justify-between bg-[#0b0d13]">
         <span>Total: {notes.length} notes</span>
         <span>{folders.length} folders</span>
       </div>

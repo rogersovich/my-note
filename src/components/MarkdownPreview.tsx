@@ -74,7 +74,7 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
 
     if (!activeNote) {
       return (
-        <div className="flex-1 flex items-center justify-center text-slate-500 bg-[#0d1117] text-sm">
+        <div className="flex-1 flex items-center justify-center text-slate-400 font-medium bg-[#0e1118] text-sm">
           No note active
         </div>
       );
@@ -84,7 +84,7 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="flex-1 h-full overflow-y-auto p-6 md:p-8 bg-[#0d1117] custom-scroll select-text"
+        className="flex-1 h-full overflow-y-auto p-6 md:p-8 bg-[#0e1118] custom-scroll select-text"
       >
         <div 
           className="max-w-3xl mx-auto markdown-preview"
@@ -92,12 +92,12 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
         >
           {/* Frontmatter metadata table preview (like reference image) */}
           {frontmatter && Object.keys(frontmatter).length > 0 && (
-            <div className="mb-6 rounded-lg overflow-hidden border border-[#282e39] bg-[#161b24] shadow-sm">
+            <div className="mb-6 rounded-lg overflow-hidden border border-[#222a3a] bg-[#141822] shadow-sm">
               <table className="w-full text-xs m-0">
                 <tbody>
                   {Object.entries(frontmatter).map(([key, val]) => (
-                    <tr key={key} className="border-b border-[#21262d] last:border-b-0">
-                      <td className="w-28 font-medium text-slate-400 bg-[#121620] px-3 py-2 border-r border-[#21262d]">
+                    <tr key={key} className="border-b border-[#1e2636] last:border-b-0">
+                      <td className="w-28 font-medium text-slate-300 bg-[#10141e] px-3 py-2 border-r border-[#1e2636]">
                         {key}
                       </td>
                       <td className="px-3 py-2 text-slate-200">
@@ -106,7 +106,7 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
                             {val.map((item, idx) => (
                               <span
                                 key={idx}
-                                className="px-2 py-0.5 rounded-full text-[11px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/30"
+                                className="px-2 py-0.5 rounded text-[11px] bg-[#182030] text-blue-300 border border-blue-500/30"
                               >
                                 {item}
                               </span>
@@ -131,7 +131,7 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
               // Custom code block with Copy button & language tag
               pre: ({ children, ...props }) => {
                 return (
-                  <div className="relative group my-4 rounded-lg overflow-hidden border border-[#21262d] bg-[#0b0e14]">
+                  <div className="relative group my-4 rounded-lg overflow-hidden border border-[#1e2636] bg-[#0b0d13]">
                     <pre {...props} className="m-0 p-4 overflow-x-auto text-sm">
                       {children}
                     </pre>
@@ -145,7 +145,7 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
 
                 if (isInline) {
                   return (
-                    <code className="px-1.5 py-0.5 rounded text-xs bg-[#161b24] text-pink-400 font-mono" {...props}>
+                    <code className="px-1.5 py-0.5 rounded text-xs bg-[#161c28] text-sky-300 border border-[#2b3548] font-mono" {...props}>
                       {children}
                     </code>
                   );
@@ -161,14 +161,14 @@ export const MarkdownPreview = forwardRef<MarkdownPreviewHandle, MarkdownPreview
                   <div className="relative">
                     <div className="absolute -top-3 right-0 flex items-center gap-1.5 z-10">
                       {match && (
-                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#161b24] text-slate-400 border border-[#282e39]">
+                        <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#161c28] text-slate-300 border border-[#263042]">
                           {match[1]}
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={handleCopy}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#161b24] hover:bg-[#212631] text-[11px] text-slate-300 border border-[#282e39] transition-colors"
+                        className="flex items-center gap-1 px-2 py-0.5 rounded bg-[#161c28] hover:bg-[#1f2738] text-[11px] text-slate-200 border border-[#263042] transition-colors"
                         title="Copy code"
                       >
                         {copied ? (
