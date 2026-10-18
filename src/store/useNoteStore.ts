@@ -13,6 +13,42 @@ const STORAGE_NOTES = 'mynote_local_notes';
 const STORAGE_FOLDERS = 'mynote_local_folders';
 const STORAGE_TABS = 'mynote_open_tabs';
 const STORAGE_ACTIVE_NOTE = 'mynote_active_note';
+const STORAGE_EXPANDED_FOLDERS = 'mynote_expanded_folders';
+
+function getExpandedStorageKey(userId?: string | null): string {
+  return userId ? `${STORAGE_EXPANDED_FOLDERS}_${userId}` : `${STORAGE_EXPANDED_FOLDERS}_guest`;
+}
+
+function loadExpandedFolders(userId?: string | null, fallbackFolders: Folder[] = []): string[] {
+  try {
+    const key = getExpandedStorageKey(userId);
+    const raw = localStorage.getItem(key);
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+    // Backward compatibility: check legacy un-suffixed key if guest
+    if (!userId) {
+      const legacy = localStorage.getItem(STORAGE_EXPANDED_FOLDERS);
+      if (legacy !== null) {
+        const parsed = JSON.parse(legacy);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load expanded folders:', e);
+  }
+  return fallbackFolders.map((f) => f.id);
+}
+
+function saveExpandedFolders(userId: string | null | undefined, folderIds: string[]) {
+  try {
+    const key = getExpandedStorageKey(userId);
+    localStorage.setItem(key, JSON.stringify(folderIds));
+  } catch (e) {
+    console.error('Failed to save expanded folders:', e);
+  }
+}
 
 // BroadcastChannel for instant zero-quota multi-tab sync on same machine
 let broadcastChannel: BroadcastChannel | null = null;
@@ -147,16 +183,20 @@ export const useNoteStore = create<NoteState>((set, get) => {
           localStorage.setItem(STORAGE_FOLDERS, JSON.stringify(payload));
           return { folders: payload };
         });
+      } else if (type === 'EXPANDED_FOLDERS_UPDATED') {
+        set({ expandedFolderIds: payload });
       }
     };
   }
 
+  const initialFolders = loadInitialFolders();
+
   return {
     notes: loadInitialNotes(),
-    folders: loadInitialFolders(),
+    folders: initialFolders,
     openTabIds: initialTabState.tabs,
     activeNoteId: initialTabState.active,
-    expandedFolderIds: ['folder-workspace', 'folder-personal'],
+    expandedFolderIds: loadExpandedFolders(null, initialFolders),
 
     viewMode: 'split',
     searchQuery: '',
@@ -177,9 +217,12 @@ export const useNoteStore = create<NoteState>((set, get) => {
     setFontSize: (size) => set({ fontSize: Math.max(12, Math.min(22, size)) }),
     setSyncStatus: (syncStatus) => set({ syncStatus }),
     setCurrentUser: (currentUser) => {
+      const savedExpanded = loadExpandedFolders(currentUser?.uid, get().folders);
+
       set({ 
         currentUser, 
-        syncStatus: currentUser ? 'synced' : 'local' 
+        syncStatus: currentUser ? 'synced' : 'local',
+        expandedFolderIds: savedExpanded,
       });
 
       // If user just logged in, assign user.uid to unowned local notes and sync them to Firestore
@@ -489,10 +532,15 @@ export const useNoteStore = create<NoteState>((set, get) => {
         const folders = [...state.folders, newFolder];
         const expandedFolderIds = [...state.expandedFolderIds, id];
         localStorage.setItem(STORAGE_FOLDERS, JSON.stringify(folders));
+        saveExpandedFolders(state.currentUser?.uid, expandedFolderIds);
         return { folders, expandedFolderIds };
       });
 
       broadcastChannel?.postMessage({ type: 'FOLDER_UPDATED', payload: get().folders });
+      broadcastChannel?.postMessage({
+        type: 'EXPANDED_FOLDERS_UPDATED',
+        payload: get().expandedFolderIds,
+      });
 
       if (user) {
         syncFolderToFirestore(newFolder);
@@ -527,12 +575,18 @@ export const useNoteStore = create<NoteState>((set, get) => {
           n.folderId === id ? { ...n, folderId: null } : n
         );
         const folders = state.folders.filter((f) => f.id !== id && f.parentId !== id);
+        const expandedFolderIds = state.expandedFolderIds.filter((fid) => fid !== id);
         localStorage.setItem(STORAGE_NOTES, JSON.stringify(notes));
         localStorage.setItem(STORAGE_FOLDERS, JSON.stringify(folders));
-        return { folders, notes };
+        saveExpandedFolders(state.currentUser?.uid, expandedFolderIds);
+        return { folders, notes, expandedFolderIds };
       });
 
       broadcastChannel?.postMessage({ type: 'FOLDER_UPDATED', payload: get().folders });
+      broadcastChannel?.postMessage({
+        type: 'EXPANDED_FOLDERS_UPDATED',
+        payload: get().expandedFolderIds,
+      });
 
       if (get().currentUser) {
         deleteFolderFromFirestore(id);
@@ -545,7 +599,13 @@ export const useNoteStore = create<NoteState>((set, get) => {
         const expandedFolderIds = exists
           ? state.expandedFolderIds.filter((id) => id !== folderId)
           : [...state.expandedFolderIds, folderId];
+        saveExpandedFolders(state.currentUser?.uid, expandedFolderIds);
         return { expandedFolderIds };
+      });
+
+      broadcastChannel?.postMessage({
+        type: 'EXPANDED_FOLDERS_UPDATED',
+        payload: get().expandedFolderIds,
       });
     },
 
@@ -574,10 +634,19 @@ export const useNoteStore = create<NoteState>((set, get) => {
         localStorage.setItem(STORAGE_NOTES, JSON.stringify(mergedNotes));
         localStorage.setItem(STORAGE_FOLDERS, JSON.stringify(mergedFolders));
 
+        // If user has never had an expand state stored on this device, default to expanding all folders
+        const key = getExpandedStorageKey(state.currentUser?.uid);
+        let expandedFolderIds = state.expandedFolderIds;
+        if (localStorage.getItem(key) === null && mergedFolders.length > 0) {
+          expandedFolderIds = mergedFolders.map((f) => f.id);
+          saveExpandedFolders(state.currentUser?.uid, expandedFolderIds);
+        }
+
         return {
           notes: mergedNotes,
           folders: mergedFolders,
           syncStatus: 'synced',
+          expandedFolderIds,
         };
       });
     },
