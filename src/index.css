@@ -68,7 +68,25 @@
 }
 
 .cm-activeLine {
-  background-color: #141a26 !important;
+  background-color: rgba(255, 255, 255, 0.035) !important;
+}
+
+/* Crisp, high-visibility selection highlight (VS Code blue) */
+.cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+.cm-editor .cm-selectionBackground,
+.cm-content ::selection {
+  background-color: #264f78 !important;
+}
+
+.cm-editor:not(.cm-focused) > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+  background-color: #1e3a5f !important;
+}
+
+/* Highlight of all matches when a word is selected */
+.cm-editor .cm-selectionMatch {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+  outline: 1px solid rgba(96, 165, 250, 0.5) !important;
+  border-radius: 2px;
 }
 
 /* Markdown preview typography & callouts - clean, high-contrast, zero-slop */

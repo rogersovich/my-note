@@ -1,6 +1,6 @@
 import { useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import type React from 'react';
-import CodeMirror from '@uiw/react-codemirror';
+import CodeMirror, { EditorView } from '@uiw/react-codemirror';
 import type { ReactCodeMirrorRef } from '@uiw/react-codemirror';
 import { markdown } from '@codemirror/lang-markdown';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -96,7 +96,7 @@ export const CodeEditor = forwardRef<CodeEditorHandle, CodeEditorProps>(
           ref={cmRef}
           value={content}
           height="100%"
-          extensions={[markdown()]}
+          extensions={[markdown(), EditorView.lineWrapping]}
           theme={oneDark}
           onChange={handleContentChange}
           basicSetup={{
